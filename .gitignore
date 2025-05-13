@@ -1,2 +1,6 @@
 venv
 test.ipynb
+__pycache__
+pages/__pycache__
+drafts
+temp.py

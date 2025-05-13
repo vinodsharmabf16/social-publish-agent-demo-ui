@@ -1,6 +1,6 @@
 import gradio as gr
-from pages import outcomes, tasks
-from startup import render_startup  # ✅ assuming you put the new page in pages/startup.py
+from pages import outcomes, tasks, output
+from startup import render_startup
 
 def render():
     with gr.Blocks(title="Social Publishing Agent", theme=gr.themes.Default(primary_hue="blue")) as demo:
@@ -18,19 +18,22 @@ def render():
                 )
             )
             continue_btn = gr.Button("Continue")
+
         # === Main App (tabs) ===
         with gr.Tabs(visible=False) as main_tabs:
             with gr.Tab("Outcomes"):
                 outcomes.render()
-            # with gr.Tab("Trigger"):
-            #     trigger.render()
             with gr.Tab("Tasks"):
-                tasks.render()
+                # Trigger for showing Output page
+                tasks.render(on_publish=lambda: gr.update(visible=True))  # Use gr.update to show Output tab
+            with gr.Tab("Output", visible=True) as output_tab:  # Start with Output tab hidden
+                output.render()
 
         continue_btn.click(
             fn=lambda: (gr.update(visible=False), gr.update(visible=True)),
             outputs=[startup_screen, main_tabs]
         )
+
     return demo
 
 if __name__ == "__main__":
