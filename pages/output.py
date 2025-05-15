@@ -1,137 +1,237 @@
 import gradio as gr
+import os
+import glob
+import json
+from dotenv import load_dotenv
+from datetime import datetime
 
+# Utility: Load latest .json file based on ACCOUNT_ID
+def get_latest_file(directory):
+    load_dotenv(override=True)
+    account_id = os.environ.get("ACCOUNT_ID")
+    filename = f"{account_id}.json"
+    print(f"Searching for file: {filename}")
+    search_path = os.path.join(directory, filename)
+    files = glob.glob(search_path)
+
+    if not files:
+        return None
+
+    files.sort(key=os.path.getmtime, reverse=True)
+    print(f"Files found: {files}")
+    return files[0]
+
+# Load data and return (combined_posts, timestamp)
+def load_data():
+    response_folder = "response"
+    latest_file = get_latest_file(response_folder)
+    print(f"Latest file found: {latest_file}")
+
+    if not latest_file:
+        return None, None
+
+    with open(latest_file, "r") as file:
+        data = json.load(file)
+        print("Successfully loaded data from", latest_file)
+
+    combined_posts = data.get("combined_posts", [])
+    return combined_posts, datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+# Build HTML table layout from data
+def rebuild_table():
+    new_data, timestamp = load_data()
+
+    timestamp_html = f"<div style='margin-bottom:10px;'>Last updated: {timestamp if timestamp else 'N/A'}</div>"
+
+    html = ""
+    if new_data:
+        html += """
+        <style>
+        .col-image {
+                flex: 0 0 20% !important;
+                min-width: 150px !important;
+                display: flex !important;
+                align-items: center !important;
+            }
+        </style>
+        <div class='output-table-row header-row'>
+            <div class='col-sno'><strong>S No.</strong></div>
+            <div class='col-time'><strong>Suggested Time</strong></div>
+            <div class='col-type'><strong>Type</strong></div>
+            <div class='col-content'><strong>Content</strong></div>
+            <div class='col-image'><strong>Image</strong></div>
+        </div>
+        """
+        for i, post in enumerate(new_data, 1):
+            content = post.get("content", {})
+            post_text = content.get("post", "")
+            source = post.get("source", "")
+            suggested_time = f"2025-05-14 {10 + i % 12}:00 {('AM' if i % 24 < 12 else 'PM')}"
+            image_urls = post.get("image_url", [])
+            image_slider_html = ""
+            if image_urls:
+                for img in image_urls:
+                    # img += f"?cb={int(datetime.now().timestamp())}"
+                    # img = ""
+                    image_slider_html += f"""
+        <img src="{img}" width="100" style="margin-right:8px; cursor:pointer;" onclick="openModal(this.src)">
+        """
+            else:
+                image_slider_html = "<img src='https://via.placeholder.com/150' width='100'>"
+
+            html += f"""
+                <div class='output-table-row'>
+                    <div class='col-sno'>{i}</div>
+                    <div class='col-time'>{suggested_time}</div>
+                    <div class='col-type'>{source}</div>
+                    <div class='col-content'>{post_text}</div>
+                    <div class='col-image'>
+                        <div class='image-slider'>{image_slider_html}</div>
+                    </div>
+                </div>
+            """
+
+    else:
+        html = "<p>No data found in the response folder.</p>"
+
+    return timestamp_html, html
+
+# Render Gradio UI
 def render():
-    dummy_img_url = "https://images.pexels.com/photos/6627574/pexels-photo-6627574.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2"
+    with gr.Blocks() as demo:
+        # Load initial content
+        initial_timestamp, initial_html = rebuild_table()
 
-    # Sample data
-    output_data = [
-        (1, "2025-05-15 10:00 AM", "Idea", "Here's your first generated post."),
-        (2, "2025-05-15 12:00 PM", "Holiday", "Another great piece of content."),
-        (3, "2025-05-15 02:00 PM", "Competitor", "Here's a third idea, fresh af."),
-        (4, "2025-05-15 04:00 PM", "Trend", "Let's keep it going with this one."),
-        (5, "2025-05-15 06:00 PM", "My Posts", "Last one! Time to publish this.")
-    ]
+        # Refresh and timestamp row
+        with gr.Row():
+            refresh_btn = gr.Button("🔄 Refresh Data", elem_id="refresh-btn")
+            timestamp_display = gr.HTML(value=initial_timestamp)
 
-    # Create the layout
-    with gr.Column() as main_column:
-        # Custom CSS in a HTML component
+        # HTML output table
+        table_html_output = gr.HTML(value=initial_html)
+
+        # Button click triggers refresh
+        refresh_btn.click(fn=rebuild_table, inputs=[], outputs=[timestamp_display, table_html_output])
+
+        # Add CSS styles
         gr.HTML("""
         <style>
-            /* Target Gradio's row containers */
             .output-table-row {
                 display: flex !important;
                 width: 100% !important;
                 margin-bottom: 4px !important;
                 gap: 2px !important;
             }
-            
-            /* Column width styles */
             .col-sno {
                 flex: 0 0 5% !important;
                 min-width: 40px !important;
                 display: flex !important;
                 align-items: center !important;
             }
-            
             .col-time {
                 flex: 0 0 20% !important;
                 min-width: 150px !important;
                 display: flex !important;
                 align-items: center !important;
             }
-            
             .col-type {
                 flex: 0 0 15% !important;
                 min-width: 100px !important;
                 display: flex !important;
                 align-items: center !important;
             }
-            
             .col-content {
                 flex: 0 0 30% !important;
                 min-width: 250px !important;
                 display: flex !important;
                 align-items: center !important;
             }
-            
             .col-image {
                 flex: 0 0 20% !important;
                 min-width: 150px !important;
                 display: flex !important;
                 align-items: center !important;
             }
-            
-            /* Add minimal padding and borders to make it look like a table */
             .output-table-row > * {
                 padding: 4px !important;
                 border: 1px solid #eee !important;
                 margin: 0 !important;
                 box-sizing: border-box !important;
             }
-            
-            /* Remove default Gradio component margins and ensure consistent width */
-            .output-table-row > * > div {
-                margin: 0 !important;
-                width: 100% !important;
-            }
-            
-            /* Force consistent sizing for all cells */
             .output-table-row p,
-            .output-table-row textarea,
             .output-table-row input {
                 margin: 0 !important;
                 padding: 0 !important;
                 width: 100% !important;
             }
-            
-            /* Header row styling */
             .header-row {
                 font-weight: bold !important;
                 background-color: #f5f5f5 !important;
             }
-            
-            /* Ensure text inputs and markdown have same alignment */
-            .output-table-row .gradio-markdown,
-            .output-table-row .gradio-textbox {
-                width: 100% !important;
+            #refresh-btn {
+                margin-bottom: 15px !important;
+                max-width: 200px !important;
             }
-            
-            /* Fix for header text alignment */
-            .header-row .gradio-markdown {
-                display: flex !important;
-                align-items: center !important;
-                height: 100% !important;
+            .image-slider {
+                display: flex;
+                overflow-x: auto;
+                gap: 8px;
+                max-width: 100%;
+                padding-bottom: 4px;
             }
+            .image-slider img {
+                flex-shrink: 0;
+                border-radius: 4px;
+            }
+            .img-modal {
+                display: none;
+                position: fixed;
+                z-index: 9999;
+                padding-top: 60px;
+                left: 0; top: 0;
+                width: 100%; height: 100%;
+                overflow: auto;
+                background-color: rgba(0,0,0,0.9);
+            }
+            .modal-content {
+                display: block;
+                margin: auto;
+                max-width: 90%;
+                max-height: 80%;
+            }
+            .close-btn {
+                position: absolute;
+                top: 30px;
+                right: 35px;
+                color: #fff;
+                font-size: 40px;
+                font-weight: bold;
+                cursor: pointer;
+            }
+
+
         </style>
+                <!-- Image Modal -->
+        <div id="imgModal" class="img-modal" onclick="closeModal()">
+            <span class="close-btn">&times;</span>
+            <img class="modal-content" id="modalImage">
+        </div>
+        <script>
+        function openModal(src) {
+            const modal = document.getElementById("imgModal");
+            const modalImg = document.getElementById("modalImage");
+            modal.style.display = "block";
+            modalImg.src = src;
+        }
+        function closeModal() {
+            document.getElementById("imgModal").style.display = "none";
+        }
+        </script>
+
         """)
-        
-        # Create a container for our table
-        with gr.Column():
-            # Header row with customized class
-            with gr.Row(elem_classes=["output-table-row", "header-row"]):
-                gr.Markdown("**S No.**", elem_classes="col-sno")
-                gr.Markdown("**Suggested Time**", elem_classes="col-time")
-                gr.Markdown("**Type**", elem_classes="col-type")
-                gr.Markdown("**Content**", elem_classes="col-content")
-                gr.Markdown("**Image**", elem_classes="col-image")
 
-            # Data rows with customized classes
-            for sno, suggested_time, type_label, content in output_data:
-                with gr.Row(elem_classes="output-table-row"):
-                    gr.Textbox(value=str(sno), interactive=False, show_label=False, 
-                              elem_classes="col-sno")
-                    gr.Textbox(value=suggested_time, interactive=False, show_label=False,
-                              elem_classes="col-time")
-                    gr.Textbox(value=type_label, interactive=False, show_label=False,
-                              elem_classes="col-type")
-                    gr.Textbox(value=content, lines=2, interactive=False, show_label=False,
-                              elem_classes="col-content")
-                    gr.Image(value=dummy_img_url, show_label=False, interactive=False,
-                            elem_classes="col-image")
-
-    return main_column
+    return demo
 
 if __name__ == "__main__":
-    with gr.Blocks() as demo:
-        render()
+    demo = render()
     demo.launch()

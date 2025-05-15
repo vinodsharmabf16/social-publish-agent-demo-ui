@@ -13,9 +13,6 @@ app.add_middleware(
     allow_headers=["*"]
 )
 
-# SAVE_DIR = "./drafts"
-# os.makedirs(SAVE_DIR, exist_ok=True)
-
 @app.post("/save_draft")
 async def save_draft(request: Request):
     data = await request.json()

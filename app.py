@@ -1,5 +1,5 @@
 import gradio as gr
-from pages import outcomes, tasks, output
+from pages import outcomes, tasks, output, flow
 from startup import render_startup
 
 def render():
@@ -28,6 +28,9 @@ def render():
                 tasks.render(on_publish=lambda: gr.update(visible=True))  # Use gr.update to show Output tab
             with gr.Tab("Output", visible=True) as output_tab:  # Start with Output tab hidden
                 output.render()
+            with gr.Tab("Flow"):
+                flow.render()
+
 
         continue_btn.click(
             fn=lambda: (gr.update(visible=False), gr.update(visible=True)),

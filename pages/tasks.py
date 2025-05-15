@@ -3,15 +3,17 @@ import json
 import os
 import gradio as gr
 from gradio_toggle import Toggle
+from dotenv import load_dotenv, set_key
 
 # Global variable to store account ID
-ACCOUNT_ID = 1123213  # Default account ID
+ACCOUNT_ID = "default"  # Default account ID
 
 def update_account_id(new_account_id):
     """Update the global account ID"""
     global ACCOUNT_ID
     try:
         ACCOUNT_ID = new_account_id
+        set_key(".env", "ACCOUNT_ID", ACCOUNT_ID)
         return f"✅ Account ID updated to: {ACCOUNT_ID}", gr.update(visible=False)
     except ValueError:
         return "❌ Please enter a valid numeric account ID", gr.update(visible=True)
@@ -29,6 +31,8 @@ def collect_prompt_data(prompts_data=None):
     return {
         "account_id": ACCOUNT_ID,
         "number_of_post": 15,
+        'small_id': '1148914',
+        'long_id': '169030216166956',
         "sources": ["Holiday ideas", "Competitor posts"],
         "prompts": {
             "holiday": ["Suggest content for upcoming holidays", "Another holiday prompt..."],
@@ -70,16 +74,27 @@ def publish_from_draft():
         # Create the API payload
         payload = {
             "account_id": ACCOUNT_ID,
-            "number_of_post": 15,  # Default value
-            "sources": sources,
-            "prompts": prompts
+            "total_post": 5,  # Default value
+            "holidays": [
+                {"date": "2025-03-09", "holiday": "Diwali"},
+                {"date": "2025-03-17", "holiday": "St. Patrick's Day"}
+            ],
+            "number_of_days": 10,
+            "business_info": "We provide expert dental care and cleaning services with cutting-edge equipment and experienced staff.",
+            "business_name": "Aspen Dental",
+            "business_category":"dental_us",
+            "categories": sources,
+            "prompt_config": prompts
         }
-        
+        print("📦 Payload to be sent to API:", payload)
         # Send to API
         try:
             print(f"🚀 Publishing with payload -----========: {json.dumps(payload, indent=2)}")
-            response = requests.post("http://localhost:8000/publish", json=payload, timeout=5)
+            response = requests.post("http://localhost:8000/generate-posts", json=payload, timeout=70)
             if response.status_code == 200:
+                with open(f"response/{ACCOUNT_ID}.json", "w") as f:
+                    json.dump(response.json(), f, indent=4)
+                print("📦 API response saved to file.")
                 return f"🚀 Published successfully! API response: {response.status_code}"
             else:
                 return f"⚠️ API returned status code: {response.status_code}"
@@ -90,10 +105,10 @@ def publish_from_draft():
         return f"❌ Error processing draft: {str(e)}"
 
 
-def publish():
-    data = collect_prompt_data()
-    res = requests.post("http://localhost:8000/publish", json=data)
-    return f"🚀 Published: {res.status_code}"
+# def publish():
+#     data = collect_prompt_data()
+#     res = requests.post("http://localhost:8000/publish", json=data)
+#     return f"🚀 Published: {res.status_code}"
 
 
 def save_as_draft(*all_values):
@@ -124,11 +139,11 @@ def save_as_draft(*all_values):
     
     # Simplified mapping for task tags
     tag_mapping = {
-        "Post ideas": "post",
-        "Holiday ideas": "holiday",
-        "My posts": "my_posts",
-        "Competitor posts": "comp",
-        "Trending": "trending"
+        "Post ideas": "BUSINESS_IDEAS_POST",
+        "Holiday ideas": "HOLIDAY_POST",
+        "My posts": "REPURPOSED_POST",
+        "Competitor posts": "COMP",
+        "Trending": "TRENDING"
     }
     
     prompts = {}
