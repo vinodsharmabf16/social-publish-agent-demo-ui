@@ -179,7 +179,7 @@ class SocialMediaPostGenerator:
                     "business_info": json.dumps(business_info)}
 
         holiday_count = len(holidays)
-        user_prompts = "\n".join(state["prompt_config"].get("holiday", []))
+        user_prompts = "\n".join(state["prompt_config"].get("HOLIDAY_POST", []))
         results = []
         parser = JsonOutputParser(pydantic_object=HolidayOutput)
 
@@ -229,7 +229,7 @@ class SocialMediaPostGenerator:
         results = []
         trends_data = fetch_business_competitors_trends(1)
         business_name = state['business_category']
-        user_prompts = "\n".join(state["prompt_config"].get("competitor", []))
+        user_prompts = "\n".join(state["prompt_config"].get("TRENDING", []))
         if business_name in trends_data:
             prompt = f"Create a social media posts using content from latest trends for the given business:. \
             \ Include context for a the business. {format_instructions}"
@@ -257,7 +257,7 @@ class SocialMediaPostGenerator:
             return {"competitor_outputs": []}
         competitors_data = fetch_business_competitors_trends(0)
         business_name = state['business_name']
-        user_prompts = "\n".join(state["prompt_config"].get("competitor", []))
+        user_prompts = "\n".join(state["prompt_config"].get("COMP", []))
         if business_name in competitors_data:
             prompt = f"Create a social media posts using content from competitors for the given business: {competitors_data}.Ignore the categories like company specific events. \
             \ Include context for a dental business. {format_instructions}"
@@ -288,7 +288,7 @@ class SocialMediaPostGenerator:
         count = remaining
 
         business_info = state["business_info"]
-        user_prompts = "\n".join(state["prompt_config"].get("business", []))
+        user_prompts = "\n".join(state["prompt_config"].get("BUSINESS_IDEAS_POST", []))
         results = []
 
         # Define a specialized model for batch output
@@ -316,6 +316,8 @@ class SocialMediaPostGenerator:
             )
 
             sys_msg = SystemMessage(content=system_content)
+            print(" System Message: ------------- ---- ", sys_msg.content)
+            print(" User Prompts: ------------- ---- ", user_prompts)
             raw_result = self.llm_business.invoke([sys_msg, HumanMessage(content=user_prompts)])
 
             try:
@@ -349,7 +351,7 @@ class SocialMediaPostGenerator:
         # repurpose_topics = self._get_repurpose_topics(count)
         own_top_perfroming_posts = get_repurposed_posts(enterpriseId, count)
 
-        user_prompts = "\n".join(state["prompt_config"].get("repurpose", []))
+        user_prompts = "\n".join(state["prompt_config"].get("REPURPOSED_POST", []))
         results = []
         parser = JsonOutputParser(pydantic_object=RepurposeOutput)
 
@@ -367,6 +369,8 @@ class SocialMediaPostGenerator:
             )
 
             sys_msg = SystemMessage(content=system_content)
+            print(" R System Message: ------------- ---- ", sys_msg.content)
+            print(" R User Prompts: ------------- ---- ", topic_prompt)   
             raw_result = self.llm_repurpose.invoke([sys_msg, HumanMessage(content=topic_prompt)])
 
             try:

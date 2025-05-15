@@ -74,7 +74,9 @@ def publish_from_draft():
         # Create the API payload
         payload = {
             "account_id": ACCOUNT_ID,
-            "total_post": 5,  # Default value
+            "total_post": 5, 
+              'small_id': '1148914',
+    'long_id': '169030216166956',
             "holidays": [
                 {"date": "2025-03-09", "holiday": "Diwali"},
                 {"date": "2025-03-17", "holiday": "St. Patrick's Day"}
@@ -90,7 +92,7 @@ def publish_from_draft():
         # Send to API
         try:
             print(f"🚀 Publishing with payload -----========: {json.dumps(payload, indent=2)}")
-            response = requests.post("http://localhost:8000/generate-posts", json=payload, timeout=70)
+            response = requests.post("http://localhost:8000/generate-posts", json=payload, timeout=50)
             if response.status_code == 200:
                 with open(f"response/{ACCOUNT_ID}.json", "w") as f:
                     json.dump(response.json(), f, indent=4)
@@ -103,12 +105,6 @@ def publish_from_draft():
             
     except Exception as e:
         return f"❌ Error processing draft: {str(e)}"
-
-
-# def publish():
-#     data = collect_prompt_data()
-#     res = requests.post("http://localhost:8000/publish", json=data)
-#     return f"🚀 Published: {res.status_code}"
 
 
 def save_as_draft(*all_values):
@@ -195,6 +191,14 @@ def tag_clicked(tag_label):
     return
 
 
+# === Open tools modal ===
+def open_tools_modal():
+    return gr.update(visible=True)
+
+# === Close tools modal ===
+def close_tools_modal():
+    return gr.update(visible=False)
+
 # === Show/hide the prompt block ===
 def toggle_task(enabled):
     return gr.update(visible=enabled)
@@ -247,12 +251,36 @@ def render(on_publish=None):
             background: #fff;
         }
         
+        .light-prompt-box {
+            position: relative;
+        }
+        
         .light-prompt-box textarea {
             background-color: #f5f5f5;
             border: none;
             border-radius: 6px;
             padding: 10px;
             font-size: 14px;
+            padding-bottom: 30px; /* Make space for the tools button */
+        }
+        
+        .tools-btn {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background: none;
+            border: none;
+            color: #1a73e8;
+            font-size: 14px;
+            padding: 2px 5px;
+            cursor: pointer;
+            z-index: 10;
+            opacity: 0.8;
+            height: 20px;
+        }
+        
+        .tools-btn:hover {
+            opacity: 1;
         }
         
         .add-prompt-btn button {
@@ -307,6 +335,20 @@ def render(on_publish=None):
             width: 400px;
         }
         
+        /* Tool selection modal - positioned on the right */
+        #tools-modal {
+            position: fixed;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            width: 520px;
+            background-color: white;
+            box-shadow: -4px 0 12px rgba(0,0,0,0.1);
+            padding: 0;
+            z-index: 1000;
+            overflow-y: auto;
+        }
+        
         #modal-overlay {
             position: fixed;
             top: 0;
@@ -317,31 +359,170 @@ def render(on_publish=None):
             z-index: 999;
         }
         
-        .settings-header {
+        .settings-header, .tools-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 16px;
+            margin-bottom: 0;
+            border-bottom: 1px solid #eee;
+            padding: 16px 20px;
         }
         
-        .settings-header h3 {
+        .tools-title-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .back-button {
+            font-size: 20px;
+            cursor: pointer;
+            color: #5f6368;
+        }
+        
+        .tools-header h3 {
+            font-size: 18px;
+            font-weight: 500;
             margin: 0;
         }
         
-        .settings-close {
+        .settings-close, .tools-close {
             background: none;
             border: none;
             font-size: 24px;
             cursor: pointer;
+            color: #5f6368;
         }
         
         .settings-content {
             margin-bottom: 20px;
         }
         
-        .settings-footer {
+        /* Tools filter and search */
+        .tools-filter-row {
+            padding: 10px 20px;
+            border-bottom: 1px solid #eee;
             display: flex;
-            justify-content: flex-end;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .tools-filter {
+            color: #3c4043;
+            font-size: 14px;
+        }
+        
+        .tool-category {
+            color: #1a73e8;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        
+        .dropdown-arrow {
+            font-size: 10px;
+            margin-left: 4px;
+            color: #1a73e8;
+        }
+        
+        .tools-search {
+            width: 40%;
+            background-color: #f1f3f4;
+            border-radius: 4px;
+            padding: 8px 12px;
+            border: none;
+        }
+        
+        /* Section header styles */
+        .tools-section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 20px 8px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .tools-section-header h4 {
+            margin: 0;
+            font-size: 14px;
+            font-weight: 500;
+            color: #3c4043;
+        }
+        
+        /* Tool list item styles */
+        .tools-list {
+            padding: 0;
+        }
+        
+        .tool-item {
+            display: flex;
+            align-items: flex-start;
+            padding: 16px 20px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+        }
+        
+        .tool-item:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .tool-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 16px;
+            background-color: #f1f3f4;
+            flex-shrink: 0;
+        }
+        
+        .tool-icon img {
+            width: 24px;
+            height: 24px;
+        }
+        
+        .tool-icon.instagram {
+            background-color: #ffebf5;
+        }
+        
+        .tool-icon.instagram img {
+            color: #e1306c;
+        }
+        
+        .tool-icon.twitter {
+            background-color: #e8f5fe;
+        }
+        
+        .tool-icon.twitter img {
+            color: #1DA1F2;
+        }
+        
+        .tool-icon.facebook {
+            background-color: #e9f3ff;
+        }
+        
+        .tool-icon.facebook img {
+            color: #4267B2;
+        }
+        
+        .tool-icon.google {
+            background-color: #f5f5f5;
+        }
+        
+        .tool-content {
+            flex-grow: 1;
+        }
+        
+        .tool-name {
+            font-weight: 500;
+            margin-bottom: 4px;
+            color: #3c4043;
+        }
+        
+        .tool-description {
+            font-size: 14px;
+            color: #5f6368;
         }
         
         /* Status message styling */
@@ -362,6 +543,7 @@ def render(on_publish=None):
         #component-0 .absolute.top-4.right-4 {
             display: none !important;
         }
+    
     </style>
     """)
 
@@ -374,20 +556,129 @@ def render(on_publish=None):
     status_message = gr.Markdown("", elem_id="status-message")
 
     # Settings modal (initially hidden)
-    with gr.Group(visible=False) as settings_modal:
-        gr.Markdown("### Settings")
-        account_id_input = gr.Textbox(
-            label="Account ID", 
-            value=str(ACCOUNT_ID),
-            info="Enter your account ID"
-        )
-        settings_status = gr.Markdown("")
-        save_settings_btn = gr.Button("Save Settings", variant="primary")
-        save_settings_btn.click(
-            fn=update_account_id,
-            inputs=[account_id_input],
-            outputs=[settings_status, settings_modal]
-        )
+    with gr.Group(visible=False, elem_id="settings-modal") as settings_modal:
+        with gr.Column():
+            with gr.Row(elem_classes=["settings-header"]):
+                gr.Markdown("### Settings")
+                close_settings_btn = gr.Button("×", elem_classes=["settings-close"])
+            
+            account_id_input = gr.Textbox(
+                label="Account ID", 
+                value=str(ACCOUNT_ID),
+                info="Enter your account ID"
+            )
+            settings_status = gr.Markdown("")
+            save_settings_btn = gr.Button("Save Settings", variant="primary")
+            
+    # Tools modal (initially hidden) - Now showing social tools selection
+    with gr.Group(visible=False, elem_id="tools-modal") as tools_modal:
+        with gr.Column():
+            with gr.Row(elem_classes=["tools-header"]):
+                gr.HTML("""
+                <div class="tools-title-row">
+                    <div class="back-button">←</div>
+                    <h3>Add tool</h3>
+                </div>
+                """)
+                close_tools_btn = gr.Button("×", elem_classes=["tools-close"])
+            
+            # Filter and search section
+            with gr.Row(elem_classes=["tools-filter-row"]):
+                gr.HTML("""
+                <div class="tools-filter">
+                    <span>Showing - </span>
+                    <span class="tool-category">Social tools</span>
+                    <span class="dropdown-arrow">▼</span>
+                </div>
+                """)
+                search_input = gr.Textbox(
+                    placeholder="Search",
+                    show_label=False,
+                    elem_classes=["tools-search"]
+                )
+            
+            # Connected tools section
+            gr.HTML("""
+            <div class="tools-section-header">
+                <h4>Connected tools</h4>
+                <span class="dropdown-arrow">▼</span>
+            </div>
+            """)
+            
+            # Tool list items
+            with gr.Column(elem_classes=["tools-list"]):
+                # Instagram tool
+                with gr.Row(elem_classes=["tool-item"]):
+                    gr.HTML("""
+                    <div class="tool-icon instagram">
+                        <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLWluc3RhZ3JhbSI+PHJlY3Qgd2lkdGg9IjIwIiBoZWlnaHQ9IjIwIiB4PSIyIiB5PSIyIiByeD0iNSIvPjxwYXRoIGQ9Ik0xNiAxMS4zN0E0IDQgMCAxIDEgMTIuNjMgOCA0IDQgMCAwIDEgMTYgMTEuMzd6Ii8+PGxpbmUgeDE9IjE3LjUiIHgyPSIxNy41MSIgeTE9IjYuNSIgeTI9IjYuNSIvPjwvc3ZnPg==" alt="Instagram" />
+                    </div>
+                    <div class="tool-content">
+                        <div class="tool-name">Get best time to post • Instagram</div>
+                        <div class="tool-description">This solution analyzes engagement patterns to find the best times to share your content.</div>
+                    </div>
+                    """)
+                
+                # Twitter tool
+                with gr.Row(elem_classes=["tool-item"]):
+                    gr.HTML("""
+                    <div class="tool-icon twitter">
+                        <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLXR3aXR0ZXIiPjxwYXRoIGQ9Ik0yMiA0cy0uNyAyLjEtMiAzLjRjMS42IDEwLTkuNCAxNy4zLTE4IDExLjYgMi4yLjEgNC40LS42IDYtMi0zLjQtLjEtNS40LTIuNS02LTQuOCAxLjEuMiAyLjIgMCAzLS4zQzIgMTEuNiAwIDkuNCAwIDUuOGMuOS41IDEuOC43IDIuOC43QzEgNC44LS4yIDIuMSAxIDAgNCA0LjMgOCA2LjUgMTMgNi43Yy0uNy0zIDEuNi02IDQuNS02IDEuNCAwIDIuNi42IDMuNSAxLjVDMjIuMiAyIDIzIDEuNSAyNCAxYy0uMiAxLjEtMSAyLTEuNSAyLjVjMSAuMSAxLjgtLjMgMi41LS41eiIvPjwvc3ZnPg==" alt="Twitter" />
+                    </div>
+                    <div class="tool-content">
+                        <div class="tool-name">Get twitter trends • Twitter</div>
+                        <div class="tool-description"></div>
+                    </div>
+                    """)
+                
+                # Facebook post tool
+                with gr.Row(elem_classes=["tool-item"]):
+                    gr.HTML("""
+                    <div class="tool-icon facebook">
+                        <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLWZhY2Vib29rIj48cGF0aCBkPSJNMTggMkgxNWEzIDMgMCAwIDAtMyAzdjNIMXYyaDExdjEwaDJ2LTEwaDRsMS0yaC01VjVhMSAxIDAgMCAxIDEtMWgzeiIvPjwvc3ZnPg==" alt="Facebook" />
+                    </div>
+                    <div class="tool-content">
+                        <div class="tool-name">Create post • Facebook</div>
+                        <div class="tool-description">Creates a new post on a page on Facebook</div>
+                    </div>
+                    """)
+                
+                # Facebook insights tool
+                with gr.Row(elem_classes=["tool-item"]):
+                    gr.HTML("""
+                    <div class="tool-icon facebook">
+                        <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLWZhY2Vib29rIj48cGF0aCBkPSJNMTggMkgxNWEzIDMgMCAwIDAtMyAzdjNIMXYyaDExdjEwaDJ2LTEwaDRsMS0yaC01VjVhMSAxIDAgMCAxIDEtMWgzeiIvPjwvc3ZnPg==" alt="Facebook" />
+                    </div>
+                    <div class="tool-content">
+                        <div class="tool-name">Get page insights • Facebook</div>
+                        <div class="tool-description">Gets insights for a page on Facebook</div>
+                    </div>
+                    """)
+                
+                # Facebook message tool
+                with gr.Row(elem_classes=["tool-item"]):
+                    gr.HTML("""
+                    <div class="tool-icon facebook">
+                        <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLWZhY2Vib29rIj48cGF0aCBkPSJNMTggMkgxNWEzIDMgMCAwIDAtMyAzdjNIMXYyaDExdjEwaDJ2LTEwaDRsMS0yaC01VjVhMSAxIDAgMCAxIDEtMWgzeiIvPjwvc3ZnPg==" alt="Facebook" />
+                    </div>
+                    <div class="tool-content">
+                        <div class="tool-name">Send message • Facebook</div>
+                        <div class="tool-description">Sends a message to a user from a Facebook page</div>
+                    </div>
+                    """)
+                
+                # Google Search tool
+                with gr.Row(elem_classes=["tool-item"]):
+                    gr.HTML("""
+                    <div class="tool-icon google">
+                        <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLWdvb2dsZSI+PHBhdGggZD0iTTEyIDI0QzYuNDc3MyAyNCAxLjg1NzUgMjAgMC45NDAxNCAxNC4zMDY4QzAuMDMwMDMgOC42MjUyNyAzLjk2OSAzLjM5NDY4IDkuNTUyMDEgMS42MjQzOUMxMy42MzE3IDAuMzg1NDIzIDE4LjA3MSAyLjA3MDE0IDIwLjQ4MiA1LjY0MzEyIi8+PHBhdGggZD0iTTEyIDAgQzY1LjM4IDAuODI1NSA5LjExIDMuMzM4MyA4LjUzIDYuOTA3NyBDOC4yMSA4LjYyMzcgOC42NyAxMC4zMzk3IDkuNjggMTEuNjk2NyBDMTAuNjkxIDEzLjA1MzcgMTIuMzcxIDEzLjcwMzcgMTQgMTMuMzA4NyBDMTUuNjI5MSAxMi45MTM3IDE2Ljk1MDEgMTEuNjM0NyAxNy4zODAxIDEwLjAxMjcgQzE3LjgxMDEgOC4zOTA3IDE3LjQ2MDEgNi42NzA3IDE2LjM4MTEgNS4zMTE3Ii8+PHBhdGggZD0iTTIwIDkuNUExMC41IDEwLjUgMCAxIDEgOS41IDIwSDEyVjE1LjA5QzEyLjAxNTggMTQuNjQ5NSAxMi4xMjg0IDE0LjIxNjggMTIuMzMgMTMuODJDMTMuMzQ3IDE3LjExMTYgMTYuODMzOCAxOC45MzM5IDIwIDIwIi8+PC9zdmc+" alt="Google" />
+                    </div>
+                    <div class="tool-content">
+                        <div class="tool-name">Google Search • Google</div>
+                        <div class="tool-description">Get Google Search results using a search query</div>
+                    </div>
+                    """)
+                
 
     # === Top Heading + Buttons in Full Width ===
     with gr.Row(elem_id="task-header-full"):
@@ -402,59 +693,95 @@ def render(on_publish=None):
         fn=lambda: gr.update(visible=True),
         outputs=[settings_modal]
     )
+    
+    # Close settings modal
+    close_settings_btn.click(
+        fn=lambda: gr.update(visible=False),
+        outputs=[settings_modal]
+    )
+    
+    # Close tools modal
+    close_tools_btn.click(
+        fn=close_tools_modal,
+        outputs=[tools_modal]
+    )
+    
+    # Save settings
+    save_settings_btn.click(
+        fn=update_account_id,
+        inputs=[account_id_input],
+        outputs=[settings_status, settings_modal]
+    )
 
     # === Main task section
     with gr.Column(elem_classes=["task-wrapper"]):
         task_data = [
-            ("Suggest content from business specific post ideas", "Post ideas"),
-            ("Suggest content for upcoming holidays", "Holiday ideas"),
-            ("Suggest content from my own top performing posts", "My posts"),
-            ("Suggest content from my competitor's top performing posts", "Competitor posts"),
-            ("Suggest content from trending topics, relevant to your business", "Trending")
+            ("Analyzze content based on Business specific post ideas", "Generate post ideas based on the business context.", "Post ideas"),
+            ("Analyze content for Upcoming holidays","Generate post for upcoming holidays.", "Holiday ideas"),
+            ("Suggest content based on top performing post","Generate new posts based on your top performing posts.", "My posts"),
+            ("Content based on your competitors' posts","Generate new posts based on your top performing posts.", "Competitor posts"),
+            ("Analyze content based on the trends","Create posts based on the latest trends", "Trending")
         ]
 
-        for i, (title, tag) in enumerate(task_data, start=1):
+        for i, (heading, title, tag) in enumerate(task_data, start=1):
             with gr.Column(elem_classes=["task-card"]):
                 with gr.Row():
                     with gr.Column(scale=11):
-                        gr.Markdown(f"**{i}. {title}**")
+                        gr.Markdown(f"**{i}. {heading}**")
                     with gr.Column(scale=1, min_width=80):
                         toggle = Toggle(value=True, color="blue", label="")
                         all_toggles.append(toggle)
 
                 with gr.Column(visible=True) as content_block:
                     with gr.Row():
-                        main_prompt = gr.Textbox(
-                            value=f"Identify {title.lower()} using",
-                            interactive=True,
-                            show_label=False,
-                            lines=1,
-                            elem_classes=["light-prompt-box"],
-                            scale=8
-                        )
-                        all_main_prompts.append(main_prompt)
+                        # Custom HTML for the main prompt with tools button
+                        with gr.Column(scale=8):
+                            with gr.Group(elem_classes=["light-prompt-box"]):
+                                main_prompt = gr.Textbox(
+                                    value=f" {title}",
+                                    interactive=True,
+                                    show_label=False,
+                                    lines=2,
+                                    elem_id=f"main-prompt-{i}"
+                                )
+                                tools_btn = gr.Button("🔧 Tools", elem_classes=["tools-btn"])
+                                tools_btn.click(
+                                    fn=open_tools_modal,
+                                    outputs=[tools_modal]
+                                )
+                            all_main_prompts.append(main_prompt)
                         
                         tag_btn = gr.Button(f"⚙️ {tag}", size="sm", scale=2)
                         tag_btn.click(fn=lambda t=tag: tag_clicked(t), outputs=[])
 
                     # For extra prompts
                     prompt_count = gr.State(0)
-                    extra_prompts = [
-                        gr.Textbox(
-                            placeholder="New prompt...",
-                            visible=False,
-                            interactive=True,
-                            show_label=False,
-                            elem_classes=["light-prompt-box"]
-                        ) for _ in range(3)
-                    ]
+                    extra_prompts_containers = []
+                    extra_prompts = []
+                    
+                    for j in range(3):
+                        with gr.Group(visible=False, elem_classes=["light-prompt-box"]) as extra_container:
+                            extra_prompt = gr.Textbox(
+                                placeholder="New prompt...",
+                                interactive=True,
+                                show_label=False,
+                                lines=2
+                            )
+                            extra_tools_btn = gr.Button("🔧 Tools", elem_classes=["tools-btn"])
+                            extra_tools_btn.click(
+                                fn=open_tools_modal,
+                                outputs=[tools_modal]
+                            )
+                            extra_prompts.append(extra_prompt)
+                            extra_prompts_containers.append(extra_container)
+                    
                     all_extra_prompts.extend(extra_prompts)
                     
                     add_btn = gr.Button("➕ Add prompt", size="sm", elem_classes=["add-prompt-btn"])
                     add_btn.click(
                         add_prompt,
                         inputs=[prompt_count],
-                        outputs=[prompt_count] + extra_prompts
+                        outputs=[prompt_count] + extra_prompts_containers
                     )
 
                 toggle.change(
