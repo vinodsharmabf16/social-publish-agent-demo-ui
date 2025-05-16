@@ -4,6 +4,9 @@ import os
 import gradio as gr
 from gradio_toggle import Toggle
 from dotenv import load_dotenv, set_key
+from logger import get_logger
+
+logger = get_logger(__name__)
 
 # Global variable to store account ID
 ACCOUNT_ID = "default"  # Default account ID
@@ -12,10 +15,13 @@ def update_account_id(new_account_id):
     """Update the global account ID"""
     global ACCOUNT_ID
     try:
+        logger.info(f"Updating account ID to: {new_account_id}")
         ACCOUNT_ID = new_account_id
         set_key(".env", "ACCOUNT_ID", ACCOUNT_ID)
+        logger.info(f"Account ID updated to: {ACCOUNT_ID}")
         return f"✅ Account ID updated to: {ACCOUNT_ID}", gr.update(visible=False)
     except ValueError:
+        logger.error("Invalid account ID entered.")
         return "❌ Please enter a valid numeric account ID", gr.update(visible=True)
 
 def collect_prompt_data(prompts_data=None):
@@ -23,6 +29,7 @@ def collect_prompt_data(prompts_data=None):
     Collect prompt data from the UI components
     If prompts_data is provided, use it; otherwise collect from UI state
     """
+    logger.info("Collecting prompt data.")
     if prompts_data:
         # Use provided data (for collecting from UI components)
         return prompts_data
@@ -49,10 +56,12 @@ def publish_from_draft():
     
     # Define the draft file path
     draft_file = f"drafts/{ACCOUNT_ID}.json"
+    logger.info(f"Attempting to publish from draft: {draft_file}")
     
     try:
         # Check if draft file exists
         if not os.path.exists(draft_file):
+            logger.warning(f"No draft found for Account ID: {ACCOUNT_ID}")
             return f"❌ No draft found for Account ID: {ACCOUNT_ID}"
         
         # Load the draft data
@@ -62,6 +71,7 @@ def publish_from_draft():
         # Extract data from the account section
         account_data = draft_data.get(str(ACCOUNT_ID), {})
         if not account_data:
+            logger.warning(f"No data found for Account ID: {ACCOUNT_ID} in draft file")
             return f"❌ No data found for Account ID: {ACCOUNT_ID} in draft file"
         
         # Get prompts and sources from the draft
@@ -71,10 +81,12 @@ def publish_from_draft():
         # Create list of enabled sources
         sources = [key for key, enabled in sources_dict.items() if enabled]
         
+        load_dotenv(override=True)
+        total_post = os.environ.get("POSTS_PER_WEEK", "7")
         # Create the API payload
         payload = {
             "account_id": ACCOUNT_ID,
-            "total_post": 5, 
+            "total_post": int(total_post), 
               'small_id': '1148914',
     'long_id': '169030216166956',
             "holidays": [
@@ -88,22 +100,25 @@ def publish_from_draft():
             "categories": sources,
             "prompt_config": prompts
         }
-        print("📦 Payload to be sent to API:", payload)
+        logger.info(f"Payload to be sent to API: {payload}")
         # Send to API
         try:
-            print(f"🚀 Publishing with payload -----========: {json.dumps(payload, indent=2)}")
+            logger.info(f"Publishing with payload: {json.dumps(payload, indent=2)}")
             response = requests.post("http://localhost:8000/generate-posts", json=payload, timeout=50)
             if response.status_code == 200:
                 with open(f"response/{ACCOUNT_ID}.json", "w") as f:
                     json.dump(response.json(), f, indent=4)
-                print("📦 API response saved to file.")
+                logger.info("API response saved to file.")
                 return f"🚀 Published successfully! API response: {response.status_code}"
             else:
+                logger.warning(f"API returned status code: {response.status_code}")
                 return f"⚠️ API returned status code: {response.status_code}"
         except requests.exceptions.RequestException as e:
+            logger.error(f"API request failed: {str(e)}")
             return f"❌ API request failed: {str(e)}"
             
     except Exception as e:
+        logger.error(f"Error processing draft: {str(e)}")
         return f"❌ Error processing draft: {str(e)}"
 
 
@@ -120,6 +135,7 @@ def save_as_draft(*all_values):
     Returns:
         Status message.
     """
+    logger.info("Saving current state as draft.")
     task_data = [
         ("Suggest content from business specific post ideas", "Post ideas"),
         ("Suggest content for upcoming holidays", "Holiday ideas"), 
@@ -182,30 +198,35 @@ def save_as_draft(*all_values):
     with open(filename, "w") as f:
         json.dump(draft_data, f, indent=2)
     
+    logger.info(f"Draft saved as {filename}")
     return f"✅ Draft saved as {filename}"
 
 
 # === Placeholder for tag button logic ===
 def tag_clicked(tag_label):
-    print(f"[Tag clicked]: {tag_label}")
+    logger.info(f"[Tag clicked]: {tag_label}")
     return
 
 
 # === Open tools modal ===
 def open_tools_modal():
+    logger.info("Opening tools modal.")
     return gr.update(visible=True)
 
 # === Close tools modal ===
 def close_tools_modal():
+    logger.info("Closing tools modal.")
     return gr.update(visible=False)
 
 # === Show/hide the prompt block ===
 def toggle_task(enabled):
+    logger.info(f"Toggling task block to: {enabled}")
     return gr.update(visible=enabled)
 
 
 # === Logic for Add Prompt button ===
 def add_prompt(count):
+    logger.info(f"Add prompt button clicked. Current count: {count}")
     if count < 3:
         return count + 1, *[
             gr.update(visible=(j < count + 1)) for j in range(3)
@@ -576,7 +597,7 @@ def render(on_publish=None):
             with gr.Row(elem_classes=["tools-header"]):
                 gr.HTML("""
                 <div class="tools-title-row">
-                    <div class="back-button">←</div>
+                    
                     <h3>Add tool</h3>
                 </div>
                 """)
@@ -687,7 +708,7 @@ def render(on_publish=None):
             settings_btn = gr.Button("⚙️", elem_id="settings-btn")
             publish_btn = gr.Button("Publish", elem_id="publish-btn", variant="primary")
             save_btn = gr.Button("Save as draft", elem_id="save-draft-btn")
-
+            logger.info(f"Task settings updated")
     # Toggle settings modal visibility
     settings_btn.click(
         fn=lambda: gr.update(visible=True),
@@ -716,7 +737,7 @@ def render(on_publish=None):
     # === Main task section
     with gr.Column(elem_classes=["task-wrapper"]):
         task_data = [
-            ("Analyzze content based on Business specific post ideas", "Generate post ideas based on the business context.", "Post ideas"),
+            ("Analyze content based on Business specific post ideas", "Generate post ideas based on the business context.", "Post ideas"),
             ("Analyze content for Upcoming holidays","Generate post for upcoming holidays.", "Holiday ideas"),
             ("Suggest content based on top performing post","Generate new posts based on your top performing posts.", "My posts"),
             ("Content based on your competitors' posts","Generate new posts based on your top performing posts.", "Competitor posts"),
@@ -759,30 +780,30 @@ def render(on_publish=None):
                     extra_prompts_containers = []
                     extra_prompts = []
                     
-                    for j in range(3):
-                        with gr.Group(visible=False, elem_classes=["light-prompt-box"]) as extra_container:
-                            extra_prompt = gr.Textbox(
-                                placeholder="New prompt...",
-                                interactive=True,
-                                show_label=False,
-                                lines=2
-                            )
-                            extra_tools_btn = gr.Button("🔧 Tools", elem_classes=["tools-btn"])
-                            extra_tools_btn.click(
-                                fn=open_tools_modal,
-                                outputs=[tools_modal]
-                            )
-                            extra_prompts.append(extra_prompt)
-                            extra_prompts_containers.append(extra_container)
+                    # for j in range(3):
+                    #     with gr.Group(visible=False, elem_classes=["light-prompt-box"]) as extra_container:
+                    #         extra_prompt = gr.Textbox(
+                    #             placeholder="New prompt...",
+                    #             interactive=True,
+                    #             show_label=False,
+                    #             lines=2
+                    #         )
+                    #         extra_tools_btn = gr.Button("🔧 Tools", elem_classes=["tools-btn"])
+                    #         extra_tools_btn.click(
+                    #             fn=open_tools_modal,
+                    #             outputs=[tools_modal]
+                    #         )
+                    #         extra_prompts.append(extra_prompt)
+                    #         extra_prompts_containers.append(extra_container)
                     
-                    all_extra_prompts.extend(extra_prompts)
+                    # all_extra_prompts.extend(extra_prompts)
                     
-                    add_btn = gr.Button("➕ Add prompt", size="sm", elem_classes=["add-prompt-btn"])
-                    add_btn.click(
-                        add_prompt,
-                        inputs=[prompt_count],
-                        outputs=[prompt_count] + extra_prompts_containers
-                    )
+                    # add_btn = gr.Button("➕ Add prompt", size="sm", elem_classes=["add-prompt-btn"])
+                    # add_btn.click(
+                    #     add_prompt,
+                    #     inputs=[prompt_count],
+                    #     outputs=[prompt_count] + extra_prompts_containers
+                    # )
 
                 toggle.change(
                     fn=toggle_task,

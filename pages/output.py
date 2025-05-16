@@ -4,35 +4,40 @@ import glob
 import json
 from dotenv import load_dotenv
 from datetime import datetime
+from logger import get_logger
+
+logger = get_logger(__name__)
 
 # Utility: Load latest .json file based on ACCOUNT_ID
 def get_latest_file(directory):
     load_dotenv(override=True)
     account_id = os.environ.get("ACCOUNT_ID")
     filename = f"{account_id}.json"
-    print(f"Searching for file: {filename}")
+    logger.info(f"Searching for file: {filename}")
     search_path = os.path.join(directory, filename)
     files = glob.glob(search_path)
 
     if not files:
+        logger.warning(f"No files found for account: {account_id}")
         return None
 
     files.sort(key=os.path.getmtime, reverse=True)
-    print(f"Files found: {files}")
+    logger.info(f"Files found: {files}")
     return files[0]
 
 # Load data and return (combined_posts, timestamp)
 def load_data():
     response_folder = "response"
     latest_file = get_latest_file(response_folder)
-    print(f"Latest file found: {latest_file}")
+    logger.info(f"Latest file found: {latest_file}")
 
     if not latest_file:
+        logger.warning("No latest file found.")
         return None, None
 
     with open(latest_file, "r") as file:
         data = json.load(file)
-        print("Successfully loaded data from", latest_file)
+        logger.info(f"Successfully loaded data from {latest_file}")
 
     combined_posts = data.get("combined_posts", [])
     return combined_posts, datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -40,6 +45,7 @@ def load_data():
 # Build HTML table layout from data
 def rebuild_table():
     new_data, timestamp = load_data()
+    logger.info(f"Rebuilding table at {timestamp}")
 
     timestamp_html = f"<div style='margin-bottom:10px;'>Last updated: {timestamp if timestamp else 'N/A'}</div>"
 
