@@ -1,53 +1,141 @@
 {
-    "dental_us": [
+"dental_us": [
       {
-        "business_name": "Community Dental Care (Generic US Practice)",
-        "location": "United States (General)",
-        "date": "2025-05-12",
-        "content": "🔍 **What's trending in oral health?** Google searches show a huge interest in 'early oral cancer detection'! We're proud to offer advanced screening techniques that can detect issues before they become serious. Prioritize your health – ask us about our oral cancer screenings today.",
-        "time_frame": "last_24_hours"
+"business_name": "Community Dental Care (Generic US Practice)",
+"location": "United States (General)",
+"date": "2025-05-12",
+"content": "🔍 **What's trending in oral health?** Google searches show a huge interest in 'early oral cancer detection'! We're proud to offer advanced screening techniques that can detect issues before they become serious. Prioritize your health – ask us about our oral cancer screenings today.",
+"time_frame": "last_24_hours"
       },
       {
-        "business_name": "Innovation Dental Group (Generic US Practice)",
-        "location": "United States (General)",
-        "date": "2025-05-11",
-        "content": "The latest **Google Trends highlight 'AI in dentistry'** as a key area of interest! We're leveraging AI for more precise diagnostics and streamlined patient management. Discover how technology is enhancing your dental experience!",
-        "time_frame": "last_48_hours"
+"business_name": "Innovation Dental Group (Generic US Practice)",
+"location": "United States (General)",
+"date": "2025-05-11",
+"content": "The latest **Google Trends highlight 'AI in dentistry'** as a key area of interest! We're leveraging AI for more precise diagnostics and streamlined patient management. Discover how technology is enhancing your dental experience!",
+"time_frame": "last_48_hours"
       },
       {
-        "business_name": "Family & Cosmetic Smiles (Generic US Practice)",
-        "location": "United States (General)",
-        "date": "2025-05-11",
-        "content": "Patients are increasingly searching for **'comfortable dental procedures'** and **'pain-free dentistry'**. We understand these concerns! Our practice offers various sedation options and uses **laser dentistry** for minimally invasive treatments to ensure your comfort.",
-        "time_frame": "last_48_hours"
+"business_name": "Family & Cosmetic Smiles (Generic US Practice)",
+"location": "United States (General)",
+"date": "2025-05-11",
+"content": "Patients are increasingly searching for **'comfortable dental procedures'** and **'pain-free dentistry'**. We understand these concerns! Our practice offers various sedation options and uses **laser dentistry** for minimally invasive treatments to ensure your comfort.",
+"time_frame": "last_48_hours"
       },
       {
-        "business_name": "Next-Gen Dental Center (Generic US Practice)",
-        "location": "United States (General)",
-        "date": "2025-05-10",
-        "content": "Google searches for **'3D printing dental crowns'** and **'same-day dental work'** are soaring! We're excited to offer in-house 3D printing for rapid, custom restorations like crowns and aligners. Get quality dental care with unprecedented speed!",
-        "time_frame": "last_7_days"
+"business_name": "Next-Gen Dental Center (Generic US Practice)",
+"location": "United States (General)",
+"date": "2025-05-10",
+"content": "Google searches for **'3D printing dental crowns'** and **'same-day dental work'** are soaring! We're excited to offer in-house 3D printing for rapid, custom restorations like crowns and aligners. Get quality dental care with unprecedented speed!",
+"time_frame": "last_7_days"
       },
       {
-        "business_name": "Total Wellness Dental (Generic US Practice)",
-        "location": "United States (General)",
-        "date": "2025-05-09",
-        "content": "Seeing more interest in **'holistic dentistry'** and **'oral systemic health'** on Google! It's great to see patients connecting oral health with overall well-being. Our approach considers your whole health for a truly comprehensive care plan.",
-        "time_frame": "last_7_days"
+"business_name": "Total Wellness Dental (Generic US Practice)",
+"location": "United States (General)",
+"date": "2025-05-09",
+"content": "Seeing more interest in **'holistic dentistry'** and **'oral systemic health'** on Google! It's great to see patients connecting oral health with overall well-being. Our approach considers your whole health for a truly comprehensive care plan.",
+"time_frame": "last_7_days"
       },
       {
-        "business_name": "Affordable Smiles Dental (Generic US Practice)",
-        "location": "United States (General)",
-        "date": "2025-05-08",
-        "content": "Patient financial concerns are still a key theme in **Google Trends for dentistry**. We're dedicated to transparency in pricing and offering various **flexible payment plans** and membership options to make quality dental care accessible. Talk to us about your options!",
-        "time_frame": "last_7_days"
+"business_name": "Affordable Smiles Dental (Generic US Practice)",
+"location": "United States (General)",
+"date": "2025-05-08",
+"content": "Patient financial concerns are still a key theme in **Google Trends for dentistry**. We're dedicated to transparency in pricing and offering various **flexible payment plans** and membership options to make quality dental care accessible. Talk to us about your options!",
+"time_frame": "last_7_days"
       },
       {
-        "business_name": "VirtuaCare Dental (Generic US Practice)",
-        "location": "United States (General)",
-        "date": "2025-05-07",
-        "content": "Curiosity around **'Teledentistry'** continues to grow according to Google searches! We offer virtual consultations for initial assessments and follow-ups, bringing convenient dental care right to your home. Find out if a virtual visit is right for you!",
-        "time_frame": "last_7_days"
+"business_name": "VirtuaCare Dental (Generic US Practice)",
+"location": "United States (General)",
+"date": "2025-05-07",
+"content": "Curiosity around **'Teledentistry'** continues to grow according to Google searches! We offer virtual consultations for initial assessments and follow-ups, bringing convenient dental care right to your home. Find out if a virtual visit is right for you!",
+"time_frame": "last_7_days"
       }
-    ]
+    ],
+"Consumer Services": [
+    {
+"business_name": "Happy Tails Veterinary Clinic (Generic US Practice)",
+"location": "United States (General)",
+"date": "2025-05-15",
+"content": "🐾 **Trending Now:** Searches for **'natural pet supplements'** are on the rise! More pet parents are turning to holistic options for wellness. We offer vet-approved supplements tailored to your pet’s unique needs. Ask us about what’s right for your furry friend!",
+"time_frame": "last_24_hours"
+    },
+    {
+"business_name": "Paws & Whiskers Animal Hospital (Generic US Practice)",
+"location": "United States (General)",
+"date": "2025-05-14",
+"content": "📈 **Pet care meets technology!** Google Trends highlight a spike in interest in **'AI pet health monitors'** and **'smart collars'**. We're integrating smart health tools to help you stay on top of your pet’s wellbeing. Learn more about our tech-enhanced care options!",
+"time_frame": "last_48_hours"
+    },
+    {
+"business_name": "Wholesome Paws Veterinary Group (Generic US Practice)",
+"location": "United States (General)",
+"date": "2025-05-14",
+"content": "🐶🐱 Pet owners are searching more for **'low-stress vet visits'** and **'fear-free clinics'**. We’re proud to offer calming spaces, gentle handling, and certified fear-free techniques to make vet visits easier for pets and parents alike.",
+"time_frame": "last_48_hours"
+    },
+    {
+"business_name": "Vetopia Animal Health (Generic US Practice)",
+"location": "United States (General)",
+"date": "2025-05-13",
+"content": "📊 Google data shows a jump in interest around **'pet dental care at home'**. Brushing your pet’s teeth isn’t just possible—it’s crucial! We can guide you with tools and training to make it easy. Healthy mouths, happy pets!",
+"time_frame": "last_7_days"
+    },
+    {
+"business_name": "Companion Wellness Vets (Generic US Practice)",
+"location": "United States (General)",
+"date": "2025-05-12",
+"content": "🌿 Holistic trends in pet care are booming! Searches for **'acupuncture for pets'** and **'CBD for anxiety'** are growing fast. Our integrative services combine traditional and alternative care for complete wellness.",
+"time_frame": "last_7_days"
+    },
+    {
+"business_name": "Affordable Pet Health (Generic US Practice)",
+"location": "United States (General)",
+"date": "2025-05-11",
+"content": "💸 According to Google, **'low-cost vet services near me'** is a top query. We’re committed to providing accessible care with transparent pricing and flexible wellness plans for every budget. Let’s talk options!",
+"time_frame": "last_7_days"
+    },
+    {
+"business_name": "TelePaws Virtual Vets (Generic US Practice)",
+"location": "United States (General)",
+"date": "2025-05-10",
+"content": "📱 Searches for **'online vet consultations'** and **'pet telemedicine'** continue to trend upward! We offer virtual care for follow-ups, behavior issues, and general health advice—right from your couch!",
+"time_frame": "last_7_days"
+    }
+  ],
+"senior_care_us": [
+    {
+"business_name": "American Senior Communities",
+"location": "Indiana, United States",
+"date": "2025-05-16",
+"content": "📊 **Trending Now:** Google searches show increased interest in **'holistic senior wellness programs'**. At ASC, our THRIVE Wellness approach supports physical, emotional, and cognitive health—helping seniors age with purpose and dignity.",
+"time_frame": "last_24_hours"
+    },
+    {
+"business_name": "American Senior Communities",
+"location": "Indiana, United States",
+"date": "2025-05-15",
+"content": "🧠 **Searches for 'dementia-friendly communities' and 'memory care engagement activities' are rising.** Our memory care programs focus on safety, stimulation, and meaningful connections. Ask how we’re leading with compassion and innovation in dementia care.",
+"time_frame": "last_48_hours"
+    },
+    {
+"business_name": "American Senior Communities",
+"location": "Indiana, United States",
+"date": "2025-05-14",
+"content": "🏠 More families are looking up **'assisted living near me with medical support'**. ASC provides personalized care with on-site nursing, therapy, and rehabilitation—ensuring residents receive the support they need, when they need it.",
+"time_frame": "last_7_days"
+    },
+    {
+"business_name": "American Senior Communities",
+"location": "Indiana, United States",
+"date": "2025-05-13",
+"content": "❤️ Google Trends show a spike in interest in **'end-of-life care options with dignity'**. Our hospice and palliative care services prioritize comfort, respect, and emotional support for residents and their families during the most important transitions.",
+"time_frame": "last_7_days"
+    },
+    {
+"business_name": "American Senior Communities",
+"location": "Indiana, United States",
+"date": "2025-05-12",
+"content": "📦 Families are increasingly searching for **'senior relocation services'**. ASC’s SMART Solutions program offers stress-free moving assistance, from downsizing to moving day logistics. We make transitions smoother for both residents and caregivers.",
+"time_frame": "last_7_days"
+    }
+  ]
   }

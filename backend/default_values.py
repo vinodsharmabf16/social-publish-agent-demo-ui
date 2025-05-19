@@ -1,5 +1,6 @@
 from enum import Enum
 
+from langchain_core.tools import tool
 # from numpy.distutils.conv_template import header
 from pydantic import BaseModel, Field
 from typing import Annotated, Literal, List, Dict, Any, Optional
@@ -15,15 +16,26 @@ PIXABAY_API_KEY = "50243041-2741613e433c3c2a3b1783510"
 # businessId='1160473'
 
 holiday_system_prompt = '''
-Use the Business details to generate an Event themed social media post on "{holiday}".
-<Business Details>
-{businessDetails}
-</Business Details>
-
 Post should be in English language only. Balance information about the business and the event. 
 Incorporate a connection between the business and the historical event. 
 Avoid any time-specific language or references to specific dates. 
 Use <|BUSINESS_NAME|> tag in same format given. Do not change it, use as it is. Be creative.
+'''
+
+general_system_prompt = '''
+You're a Social Media Writer. Below are some things to keep in mind.
+Post should be in English language only. Balance information about the business and the event. 
+Incorporate a connection between the business and the historical event. 
+Avoid any time-specific language or references to specific dates.
+Use <|BUSINESS_NAME|> tag whenever referencing the business or its location. Do not change it, use as it is.
+Be creative.
+'''
+
+business_context_prompt = '''
+Use the Business details for context
+<Business Details>
+{businessDetails}
+</Business Details>
 '''
 
 keyword_generator_system = '''
@@ -35,23 +47,26 @@ To complete this task, follow these guidelines:
 2. Select words that capture the main theme or subject of the text.
 '''
 
+tools_prompt = '''
+You have access to the below tools:
+1. get_business_meta: Use this tool if there is no business context. You can get information about the business using this tool.
+2. get_upcoming_week_holidays: Use this tool to get the upcoming holidays given the number of days to look for in the future.
+'''
+
 business_idea_system = '''
 You are a social media content creator for a business. 
 Your task is to generate only {num} social media post headers and their corresponding posts based on the provided business details. 
+
 Here are the business details:
 <business_details>\n{business_details}\n</business_details>
 
 Your goal is to create engaging and relevant social media content for this business. 
 Follow these guidelines:
-1. Be creative and engaging while staying true to the business identity and services.
-2. Each post should have a header of 2-3 words that signifies the main idea of the post.
-3. Write the post content in English only, using only English words
-4. Ensure the content is relevant to the business services and keywords
-5. Keep the tone friendly and inviting
-6. Aim for a mix of informative and promotional content
-7. Do not generate about dates/number of years
-8. Use <|BUSINESS_NAME|> tag in same format given. Do not change it, use as it is.
-9. Use few emojis (utf-8 emojis only) in the post and generate hashtags, make sure hashtag should not have years or date. Strictly make sure to not use emoji or hashtag in header section. Do not use business name in headers.
+Be creative and engaging.
+Write the post content in English only, using only English words
+Keep the tone friendly and inviting
+Do not generate about dates/number of years
+Use <|BUSINESS_NAME|> tag in same format given. Do not change it, use as it is.
 '''
 
 repurposed_post_system = '''
@@ -70,7 +85,7 @@ Instructions:
 '''
 
 default_user_prompt = '''
-Keep the above instructions in mind. Below are some special instructions requested by the user, separated by new line. If any conflicting instructions occur, prioritise the above instructions. If you cannot follow some instructions, then ignore that and inside <error_message> you can output why you couldn't follow some instruction if any.
+Keep the system instructions in mind. Below are some special instructions requested by the user, separated by new line. If any conflicting instructions occur, prioritise the system instructions. If you cannot follow some instructions, then ignore that and inside <error_message> you can output why you couldn't follow some instruction if any.\n
 '''
 
 class PostType(Enum):
@@ -81,13 +96,19 @@ class PostType(Enum):
     BUSINESS_IDEAS_POST = 5
 
 
+@tool
 def get_business_meta(businessId):
+    """
+    Takes in the businessId and returns information about the business like category, services, products, etc.
+    :param businessId
+    :return: business category as string and JSON of business metadata
+    """
     url = "https://corebusiness.birdeye.com/v1/business/profile/basic-info"
 
     payload = {}
     headers = {
       'accept': '*/*',
-      'account-id': businessId
+      'account-id': str(businessId)
     }
 
     response = requests.request("GET", url, headers=headers, data=payload)
@@ -168,8 +189,13 @@ def fetch_all_holidays():
 
     return json.loads(response.text)
 
-
+@tool
 def get_upcoming_week_holidays(days=7) -> List[Dict[str, str]]:
+    """
+    Takes in the number of upcoming days and returns all the events and holidays in that timeframe starting from current day.
+    :param days: This is the upcoming number of days that we need to check for any Holidays
+    :return: List of objects with date and Holiday/Event name as attributes.
+    """
     payload = fetch_all_holidays()
     today = datetime.today().date()
     end_date = today + timedelta(days=days)
@@ -280,3 +306,26 @@ def get_best_time_slots_next_7_days(time_slots: Dict[str, List[str]], total_coun
 
 def format_slots(slots: List[Dict[str, str]]) -> List[Dict[str, str]]:
     return [{"date": slot["date"].strftime("%Y-%m-%d"), "time": slot["time"]} for slot in slots]
+
+
+### Tool to fetch competitors data########
+@tool
+def fetch_business_competitors(business_name: str) -> Dict[str, Any]:
+    "Fetches competitors data for a given business name and other filters if applicable in the given instruction"
+    with open("competitors_mock.json", "r") as f:
+        competitors_data = json.load(f)
+        if business_name in competitors_data:
+            competitors_data = competitors_data[business_name]
+            return f"Below is the competitors data {competitors_data}"
+    return "No Data Found"
+
+
+@tool
+def fetch_business_trends(business_category: str) -> Dict[str, Any]:
+    "Fetches business trends data for a given business category and other filters if applicable in the given instruction"
+    with open("business_trends_mock.json", "r") as f:
+        trends_data = json.load(f)
+        if business_category in trends_data:
+            trends_data = trends_data[business_category]
+            return f"Below is the trends data data {trends_data}"
+    return "No data found"

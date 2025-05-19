@@ -13,26 +13,26 @@ def get_latest_file(directory):
     load_dotenv(override=True)
     account_id = os.environ.get("ACCOUNT_ID")
     filename = f"{account_id}.json"
-    logger.info(f"Searching for file: {filename}")
+    #logger.info(f"Searching for file: {filename}")
     search_path = os.path.join(directory, filename)
     files = glob.glob(search_path)
 
     if not files:
-        logger.warning(f"No files found for account: {account_id}")
+        #logger.warning(f"No files found for account: {account_id}")
         return None
 
     files.sort(key=os.path.getmtime, reverse=True)
-    logger.info(f"Files found: {files}")
+    #logger.info(f"Files found: {files}")
     return files[0]
 
 # Load data and return (combined_posts, timestamp)
 def load_data():
     response_folder = "response"
     latest_file = get_latest_file(response_folder)
-    logger.info(f"Latest file found: {latest_file}")
+    #logger.info(f"Latest file found: {latest_file}")
 
     if not latest_file:
-        logger.warning("No latest file found.")
+        #logger.warning("No latest file found.")
         return None, None
 
     with open(latest_file, "r") as file:
@@ -69,11 +69,12 @@ def rebuild_table():
         </div>
         """
         for i, post in enumerate(new_data, 1):
+            logger.info(f"Processing post {i}")
             content = post.get("content", {})
             post_text = content.get("post", "")
             source = post.get("source", "")
             suggested_time = f"2025-05-14 {10 + i % 12}:00 {('AM' if i % 24 < 12 else 'PM')}"
-            image_urls = post.get("image_url", [])
+            image_urls = post.get("image_url", ["https://salonlfc.com/wp-content/uploads/2018/01/image-not-found-scaled-1150x647.png"])
             image_slider_html = ""
             if image_urls:
                 for img in image_urls:
