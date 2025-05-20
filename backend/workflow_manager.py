@@ -82,6 +82,10 @@ class RepurposeOutput(BaseModel):
     # original_post: str = Field(description)
     error_message: Optional[str] = Field(description="Optional error message if there was an issue", default=None)
 
+class RepurposeBatch(BaseModel):
+    posts: Optional[List[RepurposeOutput]]
+    error: bool = Field(description="Should be true if couldn't find any old post to repurpose on or no post is generated. Else, False")
+
 output_parser = JsonOutputParser(pydantic_object=PostContent)
 format_instructions = output_parser.get_format_instructions()
 
@@ -111,18 +115,18 @@ class SocialMediaPostGenerator:
         builder = StateGraph(MessagesState)
         # tool_executor_node = ToolNode(self.tools)
 
-        builder.add_node("holiday_agent", self.holiday_agent_tool)
+        builder.add_node("Agent_Holiday", self.holiday_agent_tool)
         # builder.add_node("tools_node", tool_executor_node)
 
-        builder.add_node("allocate_source_count", self.allocate_source_count)
-        builder.add_node("repurpose_agent", self.repurpose_agent)
-        builder.add_node("competitor_agent", self.get_competitor_agent)
-        builder.add_node("trends_agent", self.get_trends_agent)
-        builder.add_node("business_agent", self.business_agent)
-        builder.add_node("combine_posts_and_add_image", self.combine_posts)
+        builder.add_node("Function_Distribute_Sources", self.allocate_source_count)
+        builder.add_node("Agent_RepurposeOldPosts", self.repurpose_agent_tool)
+        builder.add_node("Agent_Competitors", self.get_competitor_agent)
+        builder.add_node("Agent_Trends", self.get_trends_agent)
+        builder.add_node("Agent_PostIdeas", self.business_agent)
+        builder.add_node("Function_Combine_Posts+Recommend_Images", self.combine_posts)
         # builder.add_node("Analyse & Select Best Time to Post", self.fetch_n_btp)
 
-        builder.set_entry_point("holiday_agent")
+        builder.set_entry_point("Agent_Holiday")
 
         # builder.add_conditional_edges(
         #     "holiday_agent", # Source node
@@ -133,23 +137,22 @@ class SocialMediaPostGenerator:
         #     }
         # )
 
-        builder.add_edge("holiday_agent", "allocate_source_count")
+        builder.add_edge("Agent_Holiday", "Function_Distribute_Sources")
 
-        builder.add_edge("allocate_source_count", "repurpose_agent")
-        builder.add_edge("allocate_source_count", "competitor_agent")
-        builder.add_edge("allocate_source_count", "trends_agent")
+        builder.add_edge("Function_Distribute_Sources", "Agent_RepurposeOldPosts")
+        builder.add_edge("Function_Distribute_Sources", "Agent_Competitors")
+        builder.add_edge("Function_Distribute_Sources", "Agent_Trends")
 
-        builder.add_edge("repurpose_agent", "business_agent")
-        builder.add_edge("competitor_agent", "business_agent")
-        builder.add_edge("trends_agent", "business_agent")
+        builder.add_edge("Agent_RepurposeOldPosts", "Agent_PostIdeas")
+        builder.add_edge("Agent_Competitors", "Agent_PostIdeas")
+        builder.add_edge("Agent_Trends", "Agent_PostIdeas")
 
-        builder.add_edge("business_agent", "combine_posts_and_add_image")
+        builder.add_edge("Agent_PostIdeas", "Function_Combine_Posts+Recommend_Images")
 
-        builder.add_edge("combine_posts_and_add_image", END)
+        builder.add_edge("Function_Combine_Posts+Recommend_Images", END)
         # builder.add_edge('Analyse & Select Best Time to Post', END)
 
         return builder.compile()
-
     def _build_graph_image(self):
         try:
             # Make sure your graph is compiled
@@ -216,14 +219,18 @@ class SocialMediaPostGenerator:
         # total_sources = repurpose_post + business_post + competitor_post + trending_post
             # business_post += remaining - total_sources
         # else:
-        repurpose_post *= round(remaining/total_sources)
-        remaining -= repurpose_post
 
-        competitor_post *= round(remaining/(total_sources-1))
-        remaining -= competitor_post
+        if total_sources > 0:
+            repurpose_post *= math.ceil(remaining / total_sources)
+            remaining -= repurpose_post
 
-        trending_post *= round(remaining/(total_sources-2))
-        remaining -= trending_post
+        if total_sources > 1:
+            competitor_post *= math.ceil(remaining / (total_sources - 1))
+            remaining -= competitor_post
+
+        if total_sources > 2:
+            trending_post *= math.ceil(remaining / (total_sources - 2))
+            remaining -= trending_post
 
         # business_post *= math.floor(remaining/total_sources)
 
@@ -237,7 +244,6 @@ class SocialMediaPostGenerator:
             "trending_outputs": []
         }
         return updates
-
     # def should_call_tool(self, state: MessagesState) -> Literal["tools_node", "allocate_source_count"]:
     #     """
     #     Determines the next step based on the last message from the content_creator_agent.
@@ -259,6 +265,7 @@ class SocialMediaPostGenerator:
         businessId = state['small_id']
         num_days = state['number_of_days']
         last_message = state["last_call"]
+        tools = [get_upcoming_week_holidays, get_business_meta]
 
         if PostType.HOLIDAY_POST.name in categories and total > 0:
             pass
@@ -276,9 +283,9 @@ class SocialMediaPostGenerator:
         parser = JsonOutputParser(pydantic_object=HolidayBatch)
 
         system_content = (f"{general_system_prompt}"
-                          f"{keyword_generator_system})"
-                          f"{tools_prompt}"
-                          f'''Return your response as JSON according to these instructions:\n{parser.get_format_instructions().replace("{", "{{").replace("}", "}}")}''')
+                        f"{keyword_generator_system})"
+                        f"{tools_prompt}"
+                        f'''Return your response as JSON according to these instructions:\n{parser.get_format_instructions().replace("{", "{{").replace("}", "}}")}''')
 
         user_prompts = "\n".join(state["prompt_config"].get("HOLIDAY_POST", []))
         if user_prompts:
@@ -296,36 +303,20 @@ class SocialMediaPostGenerator:
         # Create the OpenAI Functions agent
         agent = create_openai_functions_agent(
             llm=self.llm_holiday,
-            tools=self.tools,
+            tools=tools,
             prompt=prompt
         )
 
         # Create the agent executor
         agent_executor = AgentExecutor.from_agent_and_tools(
             agent=agent,
-            tools=self.tools,
+            tools=tools,
             verbose=True
         )
 
         # Run the agent with just the input
         ai_response = agent_executor.invoke({"input": input_prompt})
 
-        # # Create the agent
-        # agent = initialize_agent(
-        #     tools=self.tools,
-        #     llm=self.llm_holiday,
-        #     agent=AgentType.OPENAI_FUNCTIONS,
-        #     verbose=True
-        # )
-        #
-        # input_dict = {
-        #     "system": system_content,
-        #     "input": input_prompt,
-        #     "Output Formatter": parser.get_format_instructions()
-        # }
-        #
-        # # Run the agent with the holiday prompt as input
-        # ai_response = agent.run(input_dict)
         holiday_count = 0
 
         try:
@@ -352,7 +343,7 @@ class SocialMediaPostGenerator:
                 # "holidays": holidays,
                 "business_category": parsed_result['business_category'],
                 "business_info": json.dumps(parsed_result['business_info'])}
-
+    
     # def holiday_agent(self, state: MessagesState) -> dict:
     #     total = state["total_post"]
     #     categories = state["categories"]
@@ -646,56 +637,136 @@ class SocialMediaPostGenerator:
                 "business_post_count": count}
 
 
-    def repurpose_agent(self, state: MessagesState) -> dict:
-        count = state["repurpose_post_count"]
-        enterpriseId = state['long_id']
-        if count == 0:
-            return {"repurpose_outputs": []}
+    # def repurpose_agent(self, state: MessagesState) -> dict:
+    #     count = state["repurpose_post_count"]
+    #     enterpriseId = state['long_id']
+    #     if count == 0:
+    #         return {"repurpose_outputs": []}
 
-        # repurpose_topics = self._get_repurpose_topics(count)
-        own_top_perfroming_posts = get_repurposed_posts(enterpriseId, count)
+    #     # repurpose_topics = self._get_repurpose_topics(count)
+    #     own_top_perfroming_posts = get_repurposed_posts(enterpriseId, count)
+
+    #     user_prompts = "\n".join(state["prompt_config"].get("REPURPOSED_POST", []))
+    #     results = []
+    #     parser = JsonOutputParser(pydantic_object=RepurposeOutput)
+
+    #     for post in own_top_perfroming_posts:
+    #         topic_prompt = f"Create a social media post using the old post."
+
+    #         if user_prompts:
+    #             topic_prompt = topic_prompt + default_user_prompt + user_prompts
+
+    #         format_instructions_local = parser.get_format_instructions()
+    #         system_content = (
+    #             f"{repurposed_post_system.format(post=post['postText'])}"
+    #             f"{keyword_generator_system}"
+    #             f"Return your response as JSON according to these instructions:\n{format_instructions_local}"
+    #         )
+
+    #         sys_msg = SystemMessage(content=system_content)
+    #         raw_result = self.llm_repurpose.invoke([sys_msg, HumanMessage(content=topic_prompt)])
+
+    #         try:
+    #             # Parse the JSON result directly
+    #             parsed_result = parser.parse(raw_result.content)
+    #             parsed_result['source'] = 'REPURPOSED'
+
+    #             results.append(parsed_result)
+    #         except Exception as e:
+    #             # If parsing fails, create a fallback response
+    #             error_msg = RepurposeOutput(
+    #                 post="",
+    #                 keywords="",
+    #                 # topic=topic,
+    #                 error_message=f"Error parsing output: {str(e)}"
+    #             )
+    #             results.append(error_msg.model_dump())
+
+    #     return {"repurpose_outputs": results}
+
+    def repurpose_agent_tool(self, state: MessagesState) -> dict:
+        count = state["repurpose_post_count"]
+        enterpriseId = state['small_id']
+        tool_config = state['tools']
+        tools = [get_useful_posts]
+        channels = []
+        config = {}
+
+        if tool_config.get('REPURPOSED_POST', []):
+            for i in tool_config.get('REPURPOSED_POST'):
+                channels.append(i['name'].replace('Get Top performing posts - ', ''))
+
+            config = tool_config.get('REPURPOSED_POST')[0]['config']
+
+        if count == 0 or not channels:
+            return {"repurpose_outputs": [], "repurpose_post_count": 0}
+
+        results = []
+        parser = JsonOutputParser(pydantic_object=RepurposeBatch)
+
+        system_content = (f"{general_system_prompt}"
+                        f"{keyword_generator_system}"
+                        f"{repurposed_post_system}"
+                        f"{tools_repurpose_prompt}"
+                        f'''Return your response as JSON according to these instructions:\n{parser.get_format_instructions().replace("{", "{{").replace("}", "}}")}''')
 
         user_prompts = "\n".join(state["prompt_config"].get("REPURPOSED_POST", []))
-        results = []
-        parser = JsonOutputParser(pydantic_object=RepurposeOutput)
+        if user_prompts:
+            user_prompts = default_user_prompt + user_prompts
 
-        for post in own_top_perfroming_posts:
-            topic_prompt = f"Create a social media post using the old post."
 
-            if user_prompts:
-                topic_prompt = topic_prompt + default_user_prompt + user_prompts
+        input_prompt = (f'\n\n Do not generate more than {count} posts.\n'
+                        f'EnterpriseId: {str(enterpriseId)}\n Page Size: {config["num_posts"]}\n'
+                        f'Channels: {channels}\n Time period: {"last " + str(config["duration"]) + " days"}')
 
-            format_instructions_local = parser.get_format_instructions()
-            system_content = (
-                f"{repurposed_post_system.format(post=post['postText'])}"
-                f"{keyword_generator_system}"
-                f"Return your response as JSON according to these instructions:\n{format_instructions_local}"
+        # Create the prompt template with system content
+        prompt = ChatPromptTemplate.from_messages([
+            ("system", system_content),
+            ("human", "{input}"),
+            MessagesPlaceholder(variable_name="agent_scratchpad")
+        ])
+
+        # Create the OpenAI Functions agent
+        agent = create_openai_functions_agent(
+            llm=self.llm_repurpose,
+            tools=tools,
+            prompt=prompt
+        )
+
+        # Create the agent executor
+        agent_executor = AgentExecutor.from_agent_and_tools(
+            agent=agent,
+            tools=tools,
+            verbose=True
+        )
+
+        # Run the agent with just the input
+        ai_response = agent_executor.invoke({"input": input_prompt})
+
+        try:
+            # Parse the JSON result directly
+            parsed_result = parser.parse(ai_response['output'])
+            if parsed_result.get('error'):
+                print('Could not find any posts to repurpose.')
+            else:
+                for post in parsed_result['posts']:
+                    post['source'] = 'REPURPOSED'
+                    results.append(post)
+
+        except Exception as e:
+            error_msg = RepurposeOutput(
+                post="",
+                keywords="",
+                error_message=f"Error parsing output: {str(e)}"
             )
+            results.append(error_msg.model_dump())
 
-            sys_msg = SystemMessage(content=system_content)
-            raw_result = self.llm_repurpose.invoke([sys_msg, HumanMessage(content=topic_prompt)])
-
-            try:
-                # Parse the JSON result directly
-                parsed_result = parser.parse(raw_result.content)
-                parsed_result['source'] = 'REPURPOSED'
-
-                results.append(parsed_result)
-            except Exception as e:
-                # If parsing fails, create a fallback response
-                error_msg = RepurposeOutput(
-                    post="",
-                    keywords="",
-                    # topic=topic,
-                    error_message=f"Error parsing output: {str(e)}"
-                )
-                results.append(error_msg.model_dump())
-
-        return {"repurpose_outputs": results}
+        return {"repurpose_outputs": results, "repurpose_post_count": len(results)}
 
     def combine_posts(self, state: MessagesState) -> dict:
         all_posts = state["holiday_outputs"] + state["business_outputs"] + state["repurpose_outputs"] + state[
             'competitor_outputs'] + state['trending_outputs']
+        print("ALL POSTS : ", all_posts)  
 
         enriched = [{"content": post, 'source': post['source'], "image_url": self._get_image_for_post(post['keywords'])} for post in all_posts]
         return {"combined_posts": enriched}
@@ -891,9 +962,9 @@ input_payload= {
 # 'make diwali post very bright. use colorful emojis', 'st. patricks post should alcohol focused. Connect it to some dental health concern.'
 
 
-social_agent = SocialMediaPostGenerator()
+# social_agent = SocialMediaPostGenerator()
 
-posts = social_agent.generate(input_payload)
+# posts = social_agent.generate(input_payload)
 
-for post in posts["combined_posts"]:
-    print(f"Source:{post['source']}\nContent:\n{post['content']}\nImage: {post['image_url']}\n{'-'*50}")
+# for post in posts["combined_posts"]:
+#     print(f"Source:{post['source']}\nContent:\n{post['content']}\nImage: {post['image_url']}\n{'-'*50}")

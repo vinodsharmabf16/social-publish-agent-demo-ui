@@ -10,22 +10,36 @@ from typing import Dict, List
 import requests
 import json
 
+import os
+from enum import Enum
+import re
+
+from langchain.chat_models import init_chat_model
+from langchain_core.messages import SystemMessage, HumanMessage
+from langchain_core.tools import tool
+from langgraph.prebuilt.tool_node import msg_content_output
+from pydantic import BaseModel, Field
+from typing import Annotated, Literal, List, Dict, Any, Optional
+from datetime import datetime, timedelta, timezone
+from typing import Dict, List
+
+
+from datetime import datetime
+
+
 
 PIXABAY_API_KEY = "50243041-2741613e433c3c2a3b1783510"
 
 # businessId='1160473'
 
 holiday_system_prompt = '''
-Post should be in English language only. Balance information about the business and the event. 
-Incorporate a connection between the business and the historical event. 
-Avoid any time-specific language or references to specific dates. 
-Use <|BUSINESS_NAME|> tag in same format given. Do not change it, use as it is. Be creative.
+Incorporate a connection between the business and the historical event if you have business context available.
+Your task is generate social media posts based on the holiday or event mentioned.
 '''
 
 general_system_prompt = '''
 You're a Social Media Writer. Below are some things to keep in mind.
 Post should be in English language only. Balance information about the business and the event. 
-Incorporate a connection between the business and the historical event. 
 Avoid any time-specific language or references to specific dates.
 Avoid vague references like Your local shop at some location. 
 Use <|BUSINESS_NAME|> tag whenever referencing the business or its location. Do not change it, use as it is.
@@ -44,14 +58,20 @@ After writing the post, generate relevant keywords for the post.
 The goal is to identify words or phrases which describe this post and would be highly suitable for searching images on a stock photo website. 
 Keep the keywords/phrases as a simple string separated by spaces.
 To complete this task, follow these guidelines:
-1. Prioritize concrete objects, scenes, or concepts that can be easily depicted in images.
-2. Select words that capture the main theme or subject of the text.
+1. Max 5 keywords should be generated/selected.
+2. Prioritize concrete objects, scenes, or concepts that can be easily depicted in images.
+3. Select words that capture the main theme or subject of the text.
 '''
 
 tools_prompt = '''
 You have access to the below tools:
 1. get_business_meta: Use this tool if there is no business context. You can get information about the business using this tool.
 2. get_upcoming_week_holidays: Use this tool to get the upcoming holidays given the number of days to look for in the future.
+'''
+
+tools_repurpose_prompt = '''
+You have access to the below tools:
+1. get_useful_posts: Use this tool to get the useful old posts for a business which can be repurposed.
 '''
 
 business_idea_system = '''
@@ -71,22 +91,54 @@ Follow these guidelines:
 '''
 
 repurposed_post_system = '''
-You are a social media content writer. Rephrase the given social media post for the business based on the provided original post.
-<original post>\n{post}\n</original_post>
+The task is to repurpose an old post which performed well. To accomplish this task, we will need to get the old useful posts.
+Once we have the posts available, repurpose the most appropriate posts based on the below instructions.
 
-Instructions: 
+Note: If by chance, we do not have any posts to repurpose then the final output will be empty with it being marked as error.
+
+Rephrasing Instructions:
 1. Rephrase the post based on the given content. 
 2. Ensure the rephrased post is of similar length to the original post. 
 3. Avoid fabricating information. 
-4. Include the business name wherever relevant. 
-5. Rephrase posts only for the specified services and avoid assumptions or fabrications. 
-6. Be very very careful of not adding any extra information from your side Ensure you strictly follow the above instructions and do not rephrase posts with offers (e.g., 30% off, starting at just $$), season-specific content, or years. 
-7. Cross-verify that the rephrased post information matches the information given in the original post. If the information does not match, rephrase the post with the correct information. 
-8. Do not provide any misleading information (e.g., thousands of happy customers).
+4. Include the business name token wherever relevant. 
+5. Do not include the parts with offers(e.g., 30% off, starting at just $$), season-specific content, time-specific content or reference any individual. Focus only on the parts which does not fall into these categories. Like, information about services or products, or some engaging content, etc.
+6. Cross-verify that the rephrased post information matches the information given in the original post. If the information does not match, rephrase the post with the correct information. 
 '''
 
+classification_prompt = '''
+We are given a social media post. The platform can be anything. Your task is to analyse the given post and 
+decide if it can be used later on as a template to generate another post. 
+For your analysis, you do not have any other metric except for the content of the post. 
+
+The useful posts will be fed into a generation model to be repurposed as a new post later on.
+<Categories>\nuseful\nuseless\n</Categories>\n
+<What is a useless post>\n- offers\n- time specific\n-day specific\n- season specific\n- holiday
+- employee announcement (new hires, promotions, anniversaries, retirements)\n- company anniversary
+- person or some entity specific\n- event specific\n- feedback\n- new office\n- sponsorship
+- wishes (festivals, special day wishes, etc.)\n- test (including meaningless posts)
+- not useful, where you cannot think of any reason where this post should be saved to repurpose.
+
+<What is Useful>
+Any post which can be used later on as a template for a new post should be marked as useful. 
+A useful post should have enough content in it to be repurposed later.
+A useful post can be a random post (with no information or business context) whose job is just to engage the customers.
+
+In case that you are not able to decide, mark the post as useful.
+
+Below is the post to be classified:
+{post}
+
+Output Format:
+The output should strictly be only <useful> or <useless>. Use <failure> tag in case of any issues.
+'''
+
+# The post being fed has high engagement and, the low engagement posts are being ignored completely, so you can ignore this and just focus on the content.
 default_user_prompt = '''
-Keep the system instructions in mind. Below are some special instructions requested by the user, separated by new line. If any conflicting instructions occur, prioritise the system instructions. If you cannot follow some instructions, then ignore that and inside <error_message> you can output why you couldn't follow some instruction if any.\n
+Keep the above system instructions in mind. 
+Below are some special instructions requested by the user, separated by new line. 
+If any conflicting instructions occur, prioritise the system instructions. 
+If you cannot follow some instructions, then ignore that and inside <error_message> you can output why you couldn't follow some instruction if any.
+Below might also be some values which may or may not be useful for tool calling.\n
 '''
 
 competitor_system_prompt = '''
@@ -113,6 +165,160 @@ should include tool name, number of posts in a tool, published date, evaluation 
 6. After analysis, generate the posts using the filtered data and output strictly in the below format {format_instructions_list} if no posts are available, just return empty list in the final output format.
 '''
 
+
+currentDate = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+
+class GetPostInputSchema(BaseModel):
+    channels: List[Literal['facebook', 'twitter', 'instagram']] = Field(
+        default= ['facebook', 'twitter', 'instagram'],
+        description="The channel or platform for which we need to get the posts. By default set it to all available channels"
+    )
+    accountId: int = Field(
+        description='The Enterprise ID'
+    )
+    pageSize: Optional[int] = Field(
+        default=10,
+        description='The number of posts to get from the system'
+    )
+    startDate: str = Field(
+        description="Start Date of the date range specified. This should be in this format always, yyyy-MM-dd HH:mm:ss"
+    )
+    endDate: str = Field(
+        default=currentDate,
+        description="End Date of the date range specified. This should be in this format always, yyyy-MM-dd HH:mm:ss"
+    )
+
+class SingleGetPostOutputSchema(BaseModel):
+    post: str = Field(
+        description="The Old Post"
+    )
+    channel: Literal["facebook", "twitter", "instagram"] = Field(
+        description="The channel or platform on which the post was posted"
+    )
+
+class GetPostOutputSchema(BaseModel):
+    posts: List[SingleGetPostOutputSchema] = Field(
+        description="List of posts along with their channels or platforms"
+    )
+
+@tool("get_useful_posts", args_schema=GetPostInputSchema)
+def get_useful_posts(channels, accountId, startDate, endDate=currentDate, pageSize=10):
+    """Gets the old useful posts which can be repurposed along with their channel"""
+    posts = []
+    llm = init_chat_model(
+        "anthropic:claude-3-5-sonnet-latest",
+        model_kwargs={"anthropic_api_key": os.getenv('ANTHROPIC_KEY')}
+    )
+
+    for channel in channels:
+        url = f"http://socialapi.birdeye.com/social/insights/es/{channel}/post?sortParam=posted_date&startIndex=0&sortOrder=DESC&pageSize={pageSize}"
+
+        payload = json.dumps({
+            "businessIds": businessIds[accountId],
+            "startDate": startDate,
+            "endDate": endDate,
+            "reportType": "POST_INSIGHT",
+            "enterpriseId": 149546071353527,
+            "tagIds": []
+        })
+
+        headers = {
+            'SERVICE-NAME': 'AMBASSADOR',
+            'user-id': '2230165',
+            'account-id': str(accountId),
+            'Content-Type': 'application/json'
+        }
+        response = requests.request("PUT", url, headers=headers, data=payload)
+        temp = json.loads(response.text).get('pagePostData', [])
+        for x in temp:
+            post = x['postContent']
+            if post:
+                if not is_useless_post(post):
+                    response = llm.invoke([
+                        SystemMessage(content=''),  # Use SystemMessage
+                        HumanMessage(content=classification_prompt.format(post=post))
+                    ])
+                    if '<useful>' in response.text():
+                        posts.append({'post':post, 'channel':channel})
+
+    print(posts)
+    return posts
+
+
+def is_useless_post(post_text):
+    # Rule 0: length check
+    if len(str(post_text)) < 50:
+        return True
+
+    # Rule 1: Check for time-sensitive keywords
+    time_sensitive_keywords = [
+        "today", "tomorrow", "yesterday", "this week", "next week", "last week", "annual",
+        "this month", "next month", "last month", "deadline", "expires", "limited time", "sale ends", "register now"
+    ]  # "join us", "adopt", "rehome", "rehoming", "adoption","found", "lost", "missing", "event", "raffle", "winner",
+    if any(keyword in post_text.lower() for keyword in time_sensitive_keywords):
+        return True
+
+    # Rule 2: Check for dates (e.g., "2024-12-25", "December 25", "12/25/2024")
+    date_patterns = [
+        r"\b\d{4}-\d{2}-\d{2}\b",  # YYYY-MM-DD
+        r"\b\d{1,2}/\d{1,2}/\d{2,4}\b",  # MM/DD/YYYY or MM/DD/YY
+        r"\b(?:January|February|March|April|May|June|July|August|September|October|November|December)\s\d{1,2}(?:st|nd|rd|th)?,\s\d{4}\b"
+        # Month Day, Year
+    ]
+    for pattern in date_patterns:
+        if re.search(pattern, post_text):
+            return True
+
+    # # Rule 3: Check for specific case references (e.g., "Polly’s severe mastitis treatment")
+    # case_reference_keywords = [
+    #     "case", "treatment", "surgery", "recovery", "diagnosis", "emergency",
+    #     "procedure", "injury", "accident"
+    # ] # "found dog", "lost cat", "missing pet"
+    # if any(keyword in post_text.lower() for keyword in case_reference_keywords):
+    #     return True
+
+    # Rule 4: Check for one-time achievements or announcements
+    one_time_keywords = [
+        "winner", "award", "recognition", "achievement", "congratulations",
+        "special thanks", "shoutout", "announcement"
+    ]  # "thank you"
+    if any(keyword in post_text.lower() for keyword in one_time_keywords):
+        return True
+
+    # Rule 5: Check for expired promotions or events
+    expired_keywords = [
+        "sale", "discount", "promotion"
+
+    ]  # "raffle", "event", "open house", "parade", "festival", "celebration", "fundraiser", "offer"
+    if any(keyword in post_text.lower() for keyword in expired_keywords):
+        return True
+
+    # Rule 6: Check for seasonal or holiday-related content
+    seasonal_keywords = [
+        "Christmas", "New Year", "Easter", "Halloween", "Thanksgiving",
+        "Valentine's Day", "Independence Day", "Labor Day", "Memorial Day",
+        "holiday", "seasonal", "winter", "spring", "summer", "autumn"
+    ]  # "fall"
+    if any(keyword in post_text.lower() for keyword in seasonal_keywords):
+        return True
+
+    # Rule 10: Check for urgency indicators
+    urgency_keywords = [
+        "last chance", "don’t miss out", "act now", "limited slots", "final day"
+    ]
+    if any(keyword in post_text.lower() for keyword in urgency_keywords):
+        return True
+
+    # If none of the rules match, the post is considered reusable
+    return False
+
+businessIds = {1148914: [1159063,1159067,1181902,1181903,1181904,1181905,1181906,1181907,1181908,1181909,1181910,
+                         1181911,1181912,1181913,1181914,1181915,1181916,1181917,1181918,1181919,1181920,1181921,
+                         1181922,1181923,1181924,1181925,1181926,1181927,1181928,1182462,1182463,1210155,1210156,
+                         1225244,1225245,1229151,1229152,1229153,1229154,1314340,1541748],
+               1230007: [1230008,1234600,1234601,1234602,1234603,1234604,1234622,1234623,1234624,1234625,1234626,1234627,1234628,1234629,1234630,1234631,1234632,1234633,1234634,1234635,1234636,1234637,1234638,1234639,1234640,1234641,1234642,1234643,1234644,1234645,1234646,1234647,1234648,1234649,1234650,1234651,1234652,1234653,1234654,1234655,1234656,1234657,1234658,1234659,1234660,1234661,1234662,1234663,1234664,1234665,1234666,1234667,1234668,1234669,1234670,1234671,1234672,1234673,1234674,1234675,1234676,1234677,1234678,1234679,1234680,1234681,1234682,1234683,1234684,1234685,1234686,1234687,1234688,1234689,1234690,1234691,1234692,1234693,1234694,1234695,1234696,1234697,1234698,1234699,1234700,1234701,1234702,1234703,1234704,1234705,1234706,1234707,1234708,1234709,1234710,1234711,1234712,1234713,1234714,1234715,1234716,1234717,1234718,1234719,1234720,1234722,1264924],
+               1264350: [1276093,1276241,1276242,1276243,1276244,1276245,1276246,1276247,1276248,1276249,1276250,1302236,1302237,1302238,1302239,1302240,1302241,1302242,1302243,1302244,1302245,1302246,1302247,1302248,1302249,1302250,1302251,1302252,1302253,1302254,1302255,1302256,1302257,1302258,1302259,1302260,1302261,1302262,1302263,1302264,1302265,1302266,1302267,1302268,1302269,1302270,1302271,1302272,1302273,1302274,1302275,1302276,1302277,1302278,1302279,1302280,1302281,1302282,1302283,1302284,1302285,1302286,1302287,1302288,1302289,1302290,1302291,1302292,1302293,1302294,1302295,1302296,1302297,1302298,1302299,1302300,1302301,1302302,1302303,1302304,1302305,1302306,1302307,1302308,1302309,1302310,1302311,1302313,1302314,1302315,1302316,1302317,1302318,1302319,1302320,1302321,1302322,1302323,1302324,1302325,1302326,1302327,1302328,1302329,1302330,1302331,1302332,1302333,1302334,1302335,1302336,1302337,1302338,1302339,1302340,1302341,1302342,1302343,1302344,1302345,1302346,1302347,1302348,1302349,1302350,1302351,1302352,1302353,1302354,1302355,1302356,1304487,1312185,1333277,1342640,1342641,1345774,1373460,1373461,1373462,1373914,1453562,1453566,1453568,1492966,1492968,1492969,1492970,1493737,1507969,1531412,1531413,1534274]
+               }
 
 class PostType(Enum):
     HOLIDAY_POST = 1
