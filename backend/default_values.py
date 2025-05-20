@@ -27,6 +27,7 @@ You're a Social Media Writer. Below are some things to keep in mind.
 Post should be in English language only. Balance information about the business and the event. 
 Incorporate a connection between the business and the historical event. 
 Avoid any time-specific language or references to specific dates.
+Avoid vague references like Your local shop at some location. 
 Use <|BUSINESS_NAME|> tag whenever referencing the business or its location. Do not change it, use as it is.
 Be creative.
 '''
@@ -62,11 +63,11 @@ Here are the business details:
 
 Your goal is to create engaging and relevant social media content for this business. 
 Follow these guidelines:
-Be creative and engaging.
-Write the post content in English only, using only English words
-Keep the tone friendly and inviting
-Do not generate about dates/number of years
-Use <|BUSINESS_NAME|> tag in same format given. Do not change it, use as it is.
+1. Be creative and engaging.
+2. Write the post content in English only, using only English words
+3. Keep the tone friendly and inviting
+4. Do not generate about dates/number of years
+5. Use <|BUSINESS_NAME|> tag in same format given. Do not change it, use as it is.
 '''
 
 repurposed_post_system = '''
@@ -77,7 +78,7 @@ Instructions:
 1. Rephrase the post based on the given content. 
 2. Ensure the rephrased post is of similar length to the original post. 
 3. Avoid fabricating information. 
-4. Include the business name wherever relevant. Avoid vague references like Your local shop at some location. 
+4. Include the business name wherever relevant. 
 5. Rephrase posts only for the specified services and avoid assumptions or fabrications. 
 6. Be very very careful of not adding any extra information from your side Ensure you strictly follow the above instructions and do not rephrase posts with offers (e.g., 30% off, starting at just $$), season-specific content, or years. 
 7. Cross-verify that the rephrased post information matches the information given in the original post. If the information does not match, rephrase the post with the correct information. 
@@ -87,6 +88,31 @@ Instructions:
 default_user_prompt = '''
 Keep the system instructions in mind. Below are some special instructions requested by the user, separated by new line. If any conflicting instructions occur, prioritise the system instructions. If you cannot follow some instructions, then ignore that and inside <error_message> you can output why you couldn't follow some instruction if any.\n
 '''
+
+competitor_system_prompt = '''
+You are a social media content writer/post creator. Your task is to create social media posts for a business using the content from competitors' posts.
+Objectives:
+To create proper posts which drives value to the business and its customers.
+To strictly follow the instructions given mentioned below and give preferences to the user instructions if any.
+Instructions:
+1. Create {count} social media posts using content from competitors for the given business.
+2. Check the tool catalog for the definition and use the appropriate tool to fetch the data. Business name and tools to invoke.
+```Business Name: {business_name}, Tools: {tools_list}
+3. Use the config {config} for each tool on specific constraints strictly for further analysis. Follow the filtering in the same order below.
+ duration - based on published date filter latest posts till specified duration-> evaluation metric for posts -> num_posts - no of posts to fetch for analysis. 
+4. From the fetched posts, evaluate and classify each post using the following rules:
+<useful> - if the post content is reusable or adaptable for future business posts.
+<useless> -  if it is highly specific (e.g., direct promotions, personal wishes, staff announcements).
+<failure> -  if the post content is missing or unreadable.
+Only proceed with posts marked as <useful> for further content generation tailored to the business {business_name}.
+After all analysis, proceed with filtered final set of data.
+5. Before generating the posts, provide intermediate steps of what all data you are fetching after above steps before you are generating posts.
+should include tool name, number of posts in a tool, published date, evaluation metric only.
+<tool_name><filtered_date_list_taken_finally><evaluation_metric_list><number_of_posts_per_tool>
+<print the filtered intermediate data> used for analysis. This is just for intermediate step to verify filtered data is inline with config.
+6. After analysis, generate the posts using the filtered data and output strictly in the below format {format_instructions_list} if no posts are available, just return empty list in the final output format.
+'''
+
 
 class PostType(Enum):
     HOLIDAY_POST = 1
@@ -310,8 +336,10 @@ def format_slots(slots: List[Dict[str, str]]) -> List[Dict[str, str]]:
 
 ### Tool to fetch competitors data########
 @tool
-def fetch_business_competitors(business_name: str) -> Dict[str, Any]:
-    "Fetches competitors data for a given business name and other filters if applicable in the given instruction"
+def fetch_business_competitors_all(business_name: str) -> Dict[str, Any]:
+    """Fetches competitors data for a given business name and other filters if applicable in the given instruction
+     publisheddata will be in epoch time format use it accordingly.
+    """
     with open("competitors_mock.json", "r") as f:
         competitors_data = json.load(f)
         if business_name in competitors_data:
@@ -319,13 +347,77 @@ def fetch_business_competitors(business_name: str) -> Dict[str, Any]:
             return f"Below is the competitors data {competitors_data}"
     return "No Data Found"
 
+@tool
+def fetch_business_competitors_facebook(business_name: str) -> Dict[str, Any]:
+    """Fetches competitors data for a given business name and channel 'Facebook'
+    publisheddata will be in epoch time format use it accordingly.
+    """
+    with open("competitors_mock.json", "r") as f:
+        competitors_data = json.load(f)
+        if business_name in competitors_data:
+            posts = competitors_data.get(business_name, {}).get("postData", [])
+            results = [post for post in posts if post.get("channel") == "facebook"]
+            return f"Below is the competitors data {results}"
+    return "No Data Found"
+@tool
+def fetch_business_competitors_instagram(business_name: str) -> Dict[str, Any]:
+    """Fetches competitors data for a given business name  and platform 'Instagram'
+     publisheddata will be in epoch time format use it accordingly.
+    """
+    with open("competitors_mock.json", "r") as f:
+        competitors_data = json.load(f)
+        if business_name in competitors_data:
+            posts = competitors_data.get(business_name, {}).get("postData", [])
+            results = [post for post in posts if post.get("channel") == "instagram"]
+            return f"Below is the competitors data {results}"
+    return "No Data Found"
+
+# @tool
+# def fetch_business_trends(business_category: str) -> Dict[str, Any]:
+#     "Fetches business trends data for a given business category and other filters if applicable in the given instruction"
+#     with open("business_trends_mock.json", "r") as f:
+#         trends_data = json.load(f)
+#         if business_category in trends_data:
+#             trends_data = trends_data[business_category]
+#             return f"Below is the trends data data {trends_data}"
+#     return "No data found"
+
+TOOLS_REGISTRY = {
+    "Get Top performing posts - facebook":{
+        "function":fetch_business_competitors_facebook,
+        "description":"Fetches top performing posts for a given business name and channel 'Facebook'."
+    },
+    "Get Top performing posts - instagram":{
+        "function":fetch_business_competitors_instagram,
+        "description":"Fetches top performing posts for a given business name and channel 'Instagram'."
+    }
+}
 
 @tool
-def fetch_business_trends(business_category: str) -> Dict[str, Any]:
-    "Fetches business trends data for a given business category and other filters if applicable in the given instruction"
-    with open("business_trends_mock.json", "r") as f:
-        trends_data = json.load(f)
-        if business_category in trends_data:
-            trends_data = trends_data[business_category]
-            return f"Below is the trends data data {trends_data}"
-    return "No data found"
+def fetch_business_trends(
+        business_name: str,
+        industry: str,
+        sub_industry: str,
+        recency: int,
+        country: str = "US",
+        city: str = "All Cities",
+        state: str = "All States"
+) -> List[str]:
+    """
+    Calls the local FastAPI endpoint to generate trending topics based on business and location context.
+    """
+    payload = {
+        "business_name": business_name,
+        "industry": industry,
+        "sub_industry": sub_industry,
+        "country": country,
+        "city": city,
+        "state": state,
+        "recency": recency
+    }
+    try:
+        response = requests.post("http://127.0.0.1:8008/generate-trending-topics", json=payload)
+        response.raise_for_status()
+        return response.json()  # Returns full JSON content
+    except requests.RequestException as e:
+        return {"error": str(e)}

@@ -13,19 +13,21 @@ ACCOUNT_ID = "default"  # Default account ID
 
 # Global UI component references
 tools_modal = None
-holiday_detail_view = None
 business_posts_detail_view = None
 competitor_posts_detail_view = None
-business_ideas_detail_view = None
 trending_topics_detail_view = None
 
-def save_business_posts_config(get_all, get_facebook, get_twitter, get_instagram, num_posts, metric):
+def save_business_posts_config(get_facebook, get_twitter, get_instagram, duration, num_posts, metric):
     """
     Save business posts tool configuration with individual entries for each selected platform.
     Unselected platforms are removed from the configuration.
     """
     global ACCOUNT_ID
     logger.info(f"Saving business posts tool configuration")
+    
+    # Check if at least one channel is selected
+    if not (get_facebook or get_twitter or get_instagram):
+        return "❌ Please select at least one channel"
     
     draft_file = f"drafts/{ACCOUNT_ID}.json"
     
@@ -65,44 +67,36 @@ def save_business_posts_config(get_all, get_facebook, get_twitter, get_instagram
         # Clear existing configurations - this removes all previous configurations
         draft_data[str(ACCOUNT_ID)]["tools"]["REPURPOSED_POST"] = []
         
-        # Add new configurations based on selected platforms
-        if get_all:
-            # If "all" is selected, add just one config for all
+        # Add individual configurations for each selected platform
+        if get_facebook:
             draft_data[str(ACCOUNT_ID)]["tools"]["REPURPOSED_POST"].append({
-                "name": "Get Top performing posts - all",
+                "name": "Get Top performing posts - facebook",
                 "config": {
                     "num_posts": int(num_posts),
+                    "duration": int(duration),
                     "evaluation_metric": metric
                 }
             })
-        else:
-            # Add individual configurations for each selected platform
-            if get_facebook:
-                draft_data[str(ACCOUNT_ID)]["tools"]["REPURPOSED_POST"].append({
-                    "name": "Get Top performing posts - facebook",
-                    "config": {
-                        "num_posts": int(num_posts),
-                        "evaluation_metric": metric
-                    }
-                })
-            
-            if get_twitter:
-                draft_data[str(ACCOUNT_ID)]["tools"]["REPURPOSED_POST"].append({
-                    "name": "Get Top performing posts - twitter",
-                    "config": {
-                        "num_posts": int(num_posts),
-                        "evaluation_metric": metric
-                    }
-                })
-            
-            if get_instagram:
-                draft_data[str(ACCOUNT_ID)]["tools"]["REPURPOSED_POST"].append({
-                    "name": "Get Top performing posts - instagram",
-                    "config": {
-                        "num_posts": int(num_posts),
-                        "evaluation_metric": metric
-                    }
-                })
+        
+        if get_twitter:
+            draft_data[str(ACCOUNT_ID)]["tools"]["REPURPOSED_POST"].append({
+                "name": "Get Top performing posts - twitter",
+                "config": {
+                    "num_posts": int(num_posts),
+                    "duration": int(duration),
+                    "evaluation_metric": metric
+                }
+            })
+        
+        if get_instagram:
+            draft_data[str(ACCOUNT_ID)]["tools"]["REPURPOSED_POST"].append({
+                "name": "Get Top performing posts - instagram",
+                "config": {
+                    "num_posts": int(num_posts),
+                    "duration": int(duration),
+                    "evaluation_metric": metric
+                }
+            })
         
         # Save updated data
         with open(draft_file, 'w') as f:
@@ -115,13 +109,17 @@ def save_business_posts_config(get_all, get_facebook, get_twitter, get_instagram
         logger.error(f"Error saving business posts tool configuration: {str(e)}")
         return f"❌ Error saving business posts tool configuration: {str(e)}"
 
-def save_competitor_posts_config(get_all, get_facebook, get_twitter, get_instagram, num_posts, metric):
+def save_competitor_posts_config(get_facebook, get_twitter, get_instagram, duration, num_posts, metric):
     """
     Save competitor posts tool configuration with individual entries for each selected platform.
     Unselected platforms are removed from the configuration.
     """
     global ACCOUNT_ID
     logger.info(f"Saving competitor posts tool configuration")
+    
+    # Check if at least one channel is selected
+    if not (get_facebook or get_twitter or get_instagram):
+        return "❌ Please select at least one channel"
     
     draft_file = f"drafts/{ACCOUNT_ID}.json"
     
@@ -161,44 +159,36 @@ def save_competitor_posts_config(get_all, get_facebook, get_twitter, get_instagr
         # Clear existing configurations - this removes all previous configurations
         draft_data[str(ACCOUNT_ID)]["tools"]["COMP"] = []
         
-        # Add new configurations based on selected platforms
-        if get_all:
-            # If "all" is selected, add just one config for all
+        # Add individual configurations for each selected platform
+        if get_facebook:
             draft_data[str(ACCOUNT_ID)]["tools"]["COMP"].append({
-                "name": "Get Top performing posts - all",
+                "name": "Get Top performing posts - facebook",
                 "config": {
                     "num_posts": int(num_posts),
+                    "duration": int(duration),
                     "evaluation_metric": metric
                 }
             })
-        else:
-            # Add individual configurations for each selected platform
-            if get_facebook:
-                draft_data[str(ACCOUNT_ID)]["tools"]["COMP"].append({
-                    "name": "Get Top performing posts - facebook",
-                    "config": {
-                        "num_posts": int(num_posts),
-                        "evaluation_metric": metric
-                    }
-                })
-            
-            if get_twitter:
-                draft_data[str(ACCOUNT_ID)]["tools"]["COMP"].append({
-                    "name": "Get Top performing posts - twitter",
-                    "config": {
-                        "num_posts": int(num_posts),
-                        "evaluation_metric": metric
-                    }
-                })
-            
-            if get_instagram:
-                draft_data[str(ACCOUNT_ID)]["tools"]["COMP"].append({
-                    "name": "Get Top performing posts - instagram",
-                    "config": {
-                        "num_posts": int(num_posts),
-                        "evaluation_metric": metric
-                    }
-                })
+        
+        if get_twitter:
+            draft_data[str(ACCOUNT_ID)]["tools"]["COMP"].append({
+                "name": "Get Top performing posts - twitter",
+                "config": {
+                    "num_posts": int(num_posts),
+                    "duration": int(duration),
+                    "evaluation_metric": metric
+                }
+            })
+        
+        if get_instagram:
+            draft_data[str(ACCOUNT_ID)]["tools"]["COMP"].append({
+                "name": "Get Top performing posts - instagram",
+                "config": {
+                    "num_posts": int(num_posts),
+                    "duration": int(duration),
+                    "evaluation_metric": metric
+                }
+            })
         
         # Save updated data
         with open(draft_file, 'w') as f:
@@ -210,6 +200,68 @@ def save_competitor_posts_config(get_all, get_facebook, get_twitter, get_instagr
     except Exception as e:
         logger.error(f"Error saving competitor posts tool configuration: {str(e)}")
         return f"❌ Error saving competitor posts tool configuration: {str(e)}"
+
+def save_trending_topics_config(num_posts, duration):
+    """
+    Save trending topics tool configuration.
+    """
+    global ACCOUNT_ID
+    logger.info(f"Saving trending topics tool configuration")
+    
+    draft_file = f"drafts/{ACCOUNT_ID}.json"
+    
+    try:
+        # Create drafts directory if it doesn't exist
+        os.makedirs("drafts", exist_ok=True)
+        
+        # Load existing data if file exists
+        if os.path.exists(draft_file):
+            with open(draft_file, 'r') as f:
+                draft_data = json.load(f)
+        else:
+            draft_data = {
+                str(ACCOUNT_ID): {
+                    "prompts": {},
+                    "sources": {},
+                    "tools": {}
+                }
+            }
+        
+        # Ensure the account section exists
+        if str(ACCOUNT_ID) not in draft_data:
+            draft_data[str(ACCOUNT_ID)] = {
+                "prompts": {},
+                "sources": {},
+                "tools": {}
+            }
+        
+        # Ensure tools section exists
+        if "tools" not in draft_data[str(ACCOUNT_ID)]:
+            draft_data[str(ACCOUNT_ID)]["tools"] = {}
+        
+        # Initialize tool type if needed
+        if "TRENDING" not in draft_data[str(ACCOUNT_ID)]["tools"]:
+            draft_data[str(ACCOUNT_ID)]["tools"]["TRENDING"] = []
+        
+        # Update the tool configuration
+        draft_data[str(ACCOUNT_ID)]["tools"]["TRENDING"] = [{
+            "name": "Fetch Trending Topics",
+            "config": {
+                "num_posts": int(num_posts),
+                "duration": int(duration)
+            }
+        }]
+        
+        # Save updated data
+        with open(draft_file, 'w') as f:
+            json.dump(draft_data, f, indent=2)
+        
+        logger.info(f"Trending topics tool configuration saved")
+        return f"✅ Trending topics tool configuration saved"
+    
+    except Exception as e:
+        logger.error(f"Error saving trending topics tool configuration: {str(e)}")
+        return f"❌ Error saving trending topics tool configuration: {str(e)}"
 
 def save_tool_config(tool_type, config_data):
     """
@@ -320,17 +372,19 @@ def save_as_draft(*all_values):
     
     # Tool default configurations - each platform as a separate entry
     default_tools_config = {
-        "BUSINESS_IDEAS_POST": [{"name": "Business Context", "config": {"enabled": True}}],
-        "HOLIDAY_POST": [{"name": "Get Upcoming Holidays", "config": {"include_business_context": True}}],
-        "REPURPOSED_POST": [{"name": "Get Top performing posts - all", "config": {
-            "num_posts": 5,
-            "evaluation_metric": "Engagement"
-        }}],
-        "COMP": [{"name": "Get Top performing posts - all", "config": {
-            "num_posts": 5,
-            "evaluation_metric": "Engagement"
-        }}],
-        "TRENDING": [{"name": "Fetch Trending Topics", "config": {"enabled": True}}]
+        "BUSINESS_IDEAS_POST": [{"name": "Business Context"}],
+        "HOLIDAY_POST": [{"name": "Get Upcoming Holidays"}],
+        "REPURPOSED_POST": [
+            {"name": "Get Top performing posts - facebook", "config": {"num_posts": 10, "duration": "30", "evaluation_metric": "Engagement"}},
+            {"name": "Get Top performing posts - twitter", "config": {"num_posts": 10, "duration": "30", "evaluation_metric": "Engagement"}},
+            {"name": "Get Top performing posts - instagram", "config": {"num_posts": 10, "duration": "30", "evaluation_metric": "Engagement"}}
+        ],
+        "COMP": [
+            {"name": "Get Top performing posts - facebook", "config": {"num_posts": 10, "duration": "30", "evaluation_metric": "Engagement"}},
+            {"name": "Get Top performing posts - twitter", "config": {"num_posts": 10, "duration": "30", "evaluation_metric": "Engagement"}},
+            {"name": "Get Top performing posts - instagram", "config": {"num_posts": 10, "duration": "30", "evaluation_metric": "Engagement"}}
+        ],
+        "TRENDING": [{"name": "Fetch Trending Topics", "config": {"num_posts": 10, "duration": "1"}}]
     }
     
     prompts = {}
@@ -390,35 +444,6 @@ def save_as_draft(*all_values):
     
     logger.info(f"Draft saved as {filename}")
     return f"✅ Draft saved as {filename}"
-
-# Add functions for each tool save button
-def save_holiday_config(get_business_context, get_upcoming_holidays):
-    tool_config = {
-        "name": "Get Upcoming Holidays",
-        "config": {
-            "include_business_context": bool(get_business_context)
-        }
-    }
-    return save_tool_config("HOLIDAY_POST", tool_config)
-
-
-def save_business_ideas_config(business_context):
-    tool_config = {
-        "name": "Business Context",
-        "config": {
-            "enabled": bool(business_context)
-        }
-    }
-    return save_tool_config("BUSINESS_IDEAS_POST", tool_config)
-
-def save_trending_topics_config(fetch_trending):
-    tool_config = {
-        "name": "Fetch Trending Topics",
-        "config": {
-            "enabled": bool(fetch_trending)
-        }
-    }
-    return save_tool_config("TRENDING", tool_config)
 
 def load_draft_for_account(account_id):
     """
@@ -526,14 +551,14 @@ def update_account_id_and_load_draft(new_account_id):
                 gr.update(visible=False),
                 *[gr.update() for _ in range(10)]  # 5 toggles + 5 prompts
             )
-    except ValueError:
-        logger.error("Invalid account ID entered.")
+    except Exception as e:
+        logger.error(f"Error updating account ID: {str(e)}")
         return (
-            "❌ Please enter a valid numeric account ID",
+            f"❌ Error updating account ID: {str(e)}",
             gr.update(visible=True),
             *[gr.update() for _ in range(10)]  # 5 toggles + 5 prompts
         )
-    
+     
 def update_account_id(new_account_id):
     """Update the global account ID"""
     global ACCOUNT_ID
@@ -604,15 +629,39 @@ def publish_from_draft():
         # Create list of enabled sources
         sources = [key for key, enabled in sources_dict.items() if enabled]
         
+        # Load account information from accounts.json
+        try:
+            with open("accounts.json", 'r') as f:
+                accounts_data = json.load(f)
+            
+            # Get the account specific data
+            account_info = accounts_data.get(ACCOUNT_ID, {})
+            if not account_info:
+                logger.warning(f"Account {ACCOUNT_ID} not found in accounts.json")
+                return f"❌ Account {ACCOUNT_ID} not found in accounts.json"
+            
+            # Extract the required fields
+            small_id = account_info.get("small_id")
+            long_id = account_info.get("long_id")
+            business_name = account_info.get("business_name")
+            
+            if not all([small_id, long_id, business_name]):
+                logger.warning(f"Missing required account information for {ACCOUNT_ID}")
+                return f"❌ Missing required account information for {ACCOUNT_ID}"
+                
+        except Exception as e:
+            logger.error(f"Error loading accounts.json: {str(e)}")
+            return f"❌ Error loading accounts.json: {str(e)}"
+        
         load_dotenv(override=True)
         total_post = os.environ.get("POSTS_PER_WEEK", "7")
+        
         # Create the API payload
         payload = {
-            "account_id": ACCOUNT_ID,
-            "total_post": int(total_post), 
-            "small_id": "1148914",
-            "long_id": "169030216166956",
-            "business_name": "Village Pet Care",
+            "total_post": int(total_post),
+            "small_id": small_id,
+            "long_id": long_id, 
+            "business_name": business_name,
             "holidays": [
                 {"date": "2025-03-09", "holiday": "Diwali"},
                 {"date": "2025-03-17", "holiday": "St. Patrick's Day"}
@@ -620,13 +669,14 @@ def publish_from_draft():
             "number_of_days": 10,
             "categories": sources,
             "prompt_config": prompts,
-            "tools_config": tools_dict  # Add tools configuration to the payload
+            "tools": tools_dict  # Add tools configuration to the payload
         }
         logger.info(f"Payload to be sent to API: {payload}")
+        
         # Send to API
         try:
             logger.info(f"Publishing with payload: {json.dumps(payload, indent=2)}")
-            response = requests.post("http://localhost:8000/generate-posts", json=payload, timeout=50)
+            response = requests.post("http://localhost:8000/generate-posts", json=payload)
             if response.status_code == 200:
                 with open(f"response/{ACCOUNT_ID}.json", "w") as f:
                     json.dump(response.json(), f, indent=4)
@@ -642,74 +692,33 @@ def publish_from_draft():
     except Exception as e:
         logger.error(f"Error processing draft: {str(e)}")
         return f"❌ Error processing draft: {str(e)}"
-
+    
+    
 # === Placeholder for tag button logic ===
 def tag_clicked(tag_label):
     logger.info(f"[Tag clicked]: {tag_label}")
     return
-
-def open_tools_modal():
-    logger.info("Opening tools modal.")
-    return (
-        gr.update(visible=True),   # tools_modal
-        gr.update(visible=False),  # holiday_detail_view
-        gr.update(visible=False),  # business_posts_detail_view
-        gr.update(visible=False),  # competitor_posts_detail_view
-        gr.update(visible=False),  # business_ideas_detail_view
-        gr.update(visible=False)   # trending_topics_detail_view
-    )
-
-def close_tools_modal():
-    logger.info("Closing tools modal.")
-    return (
-        gr.update(visible=False),  # tools_modal
-        gr.update(visible=False),  # holiday_detail_view
-        gr.update(visible=False),  # business_posts_detail_view
-        gr.update(visible=False),  # competitor_posts_detail_view
-        gr.update(visible=False),  # business_ideas_detail_view
-        gr.update(visible=False)   # trending_topics_detail_view
-    )
-
-# === Close tool detail view ===
-def close_tool_detail():
-    logger.info("Closing tool detail view.")
-    return gr.update(visible=False), gr.update(visible=True)
-
-# === Open tool detail view ===
-def open_tool_detail(tool_name):
-    logger.info(f"Opening tool detail for: {tool_name}")
-    return gr.update(visible=True), gr.update(visible=False)
 
 # === Show/hide the prompt block ===
 def toggle_task(enabled):
     logger.info(f"Toggling task block to: {enabled}")
     return gr.update(visible=enabled)
 
-# Functions for tool detail views
-def open_holiday_detail():
-    return gr.update(visible=True), gr.update(visible=False)
-
+# Functions for opening specific tool detail views
 def open_business_posts_detail():
-    return gr.update(visible=True), gr.update(visible=False)
+    logger.info("Opening business posts detail view")
+    return gr.update(visible=True)
 
 def open_competitor_posts_detail():
-    return gr.update(visible=True), gr.update(visible=False)
-
-def open_business_ideas_detail():
-    return gr.update(visible=True), gr.update(visible=False)
+    logger.info("Opening competitor posts detail view")
+    return gr.update(visible=True)
 
 def open_trending_topics_detail():
-    return gr.update(visible=True), gr.update(visible=False)
+    logger.info("Opening trending topics detail view")
+    return gr.update(visible=True)
 
-def close_all_tool_details():
-    return (
-        gr.update(visible=False),  # holiday
-        gr.update(visible=False),  # business posts
-        gr.update(visible=False),  # competitor posts
-        gr.update(visible=False),  # business ideas
-        gr.update(visible=False),  # trending topics
-        gr.update(visible=True)    # tools modal
-    )
+def close_tool_details():
+    return gr.update(visible=False)
 
 # === Logic for Add Prompt button ===
 def add_prompt(count):
@@ -720,9 +729,20 @@ def add_prompt(count):
         ]
     return count, *[gr.update() for _ in range(3)]
 
+# === New functions to handle config visibility ===
+def update_business_config_visibility(fb_checked, tw_checked, ig_checked):
+    """Update visibility of business posts config section"""
+    is_visible = fb_checked or tw_checked or ig_checked
+    return gr.update(visible=is_visible)
+
+def update_competitor_config_visibility(fb_checked, tw_checked, ig_checked):
+    """Update visibility of competitor posts config section"""
+    is_visible = fb_checked or tw_checked or ig_checked
+    return gr.update(visible=is_visible)
+
 # === UI render function ===
 def render(on_publish=None):
-    global tools_modal, holiday_detail_view, business_posts_detail_view, competitor_posts_detail_view, business_ideas_detail_view, trending_topics_detail_view
+    global business_posts_detail_view, competitor_posts_detail_view, trending_topics_detail_view
 
     gr.HTML("""
     <style>
@@ -869,31 +889,18 @@ def render(on_publish=None):
             width: 400px;
         }
         
-        /* Tool selection modal - positioned on the right */
-        #tools-modal {
+        /* Tool detail view - positioned on the right side and fixed to the clicked position */
+        .tool-detail-view {
             position: fixed;
-            top: 0;
-            right: 0;
-            bottom: 0;
-            width: 520px;
+            width: 420px; /* Reduced width */
             background-color: white;
             box-shadow: -4px 0 12px rgba(0,0,0,0.1);
-            padding: 0;
-            z-index: 1000;
-            overflow-y: auto;
-        }
-        
-        #tool-detail-view {
-            position: fixed;
-            top: 0;
-            right: 0;
-            bottom: 0;
-            width: 520px;
-            background-color: white;
-            box-shadow: -4px 0 12px rgba(0,0,0,0.1);
-            padding: 0;
             z-index: 1001;
             overflow-y: auto;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            max-width: 40%; /* Make sure it doesn't take up more than 40% of the screen */
         }
         
         #modal-overlay {
@@ -1079,6 +1086,23 @@ def render(on_publish=None):
             border-radius: 4px;
             background-color: #e8f0fe;
             color: #1a73e8;
+            position: fixed; /* Make it fixed */
+            bottom: 20px; /* Position at bottom */
+            left: 20px; /* Position at left */
+            z-index: 2000; /* Ensure it's above the modal */
+            max-width: 50%; /* Limit width */
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2); /* Add shadow for visibility */
+            transition: opacity 0.3s; /* Smooth fade in/out */
+            opacity: 0; /* Hidden by default */
+        }
+            
+        #status-message:not(:empty) {
+            opacity: 1; /* Show when not empty */
+        }
+
+        /* After 5 seconds, fade out */
+        #status-message.fade-out {
+            opacity: 0;
         }
         
         /* Tool detail view styling */
@@ -1181,7 +1205,20 @@ def render(on_publish=None):
         #component-0 .absolute.top-4.right-4 {
             display: none !important;
         }
-    
+        /* Ensure dropdown is fully visible */
+    #settings-modal .gradio-dropdown {
+        z-index: 1002;
+        position: relative;
+    }
+
+    #settings-modal select {
+        appearance: menulist !important; /* Force browser's default dropdown appearance */
+        -webkit-appearance: menulist !important;
+        -moz-appearance: menulist !important;
+        background-image: none !important;
+        padding-right: 20px !important;
+        cursor: pointer !important;
+    }
     </style>
     """)
 
@@ -1193,6 +1230,7 @@ def render(on_publish=None):
     # Status message for save/publish operations
     status_message = gr.Markdown("", elem_id="status-message")
 
+
     # Settings modal (initially hidden)
     with gr.Group(visible=False, elem_id="settings-modal") as settings_modal:
         with gr.Column():
@@ -1200,73 +1238,27 @@ def render(on_publish=None):
                 gr.Markdown("### Settings")
                 close_settings_btn = gr.Button("×", elem_classes=["settings-close"])
             
-            account_id_input = gr.Textbox(
-                label="Account ID", 
-                value=str(ACCOUNT_ID),
-                info="Enter your account ID"
-            )
+            # account_id_dropdown = gr.Dropdown(
+            #     label="Select Account", 
+            #     choices=["Village_Pet_Care", "American_Senior_Communities", "Fidelity_Bank"],
+            #     value="Village_Pet_Care",
+            #     info="Select your account",
+            #     interactive=True,
+            #     elem_id="account-dropdown"
+            # )
+            account_id_radio = gr.Radio(
+            label="Select Account", 
+            choices=["Village_Pet_Care", "American_Senior_Communities", "Fidelity_Bank"],
+            value="Village_Pet_Care"
+        )
+        
             settings_status = gr.Markdown("")
             save_settings_btn = gr.Button("Save Settings", variant="primary")
-            
-    # Tools modal (initially hidden) - Now showing social tools selection
-    with gr.Group(visible=False, elem_id="tools-modal") as tools_modal:
-        with gr.Column():
-            with gr.Row(elem_classes=["tools-header"]):
-                gr.HTML("""
-                <div class="tools-title-row">
-                    <h3>Add tool</h3>
-                </div>
-                """)
-                close_tools_btn = gr.Button("×", elem_classes=["tools-close"])
-            
-            # Tool categories
-            gr.HTML("""
-            <div class="tools-section-header">
-                <h4>Select a tool to configure</h4>
-            </div>
-            """)
-            
-            # Tool list items
-            with gr.Column(elem_classes=["tools-list"]):
-                holiday_btn = gr.Button("Holiday", elem_classes=["tool-item-btn"])
-                business_posts_btn = gr.Button("Business Top performing Posts", elem_classes=["tool-item-btn"])
-                competitor_posts_btn = gr.Button("Competitor Top performing Posts", elem_classes=["tool-item-btn"])
-                business_ideas_btn = gr.Button("Business Ideas / Post Ideas", elem_classes=["tool-item-btn"])
-                trending_topics_btn = gr.Button("Trending Topics", elem_classes=["tool-item-btn"])
-
     
-
-    # Tool detail view for Holiday
-    with gr.Group(visible=False, elem_id="tool-detail-view-holiday") as holiday_detail_view:
-        with gr.Column():
-            with gr.Row(elem_classes=["tools-header"]):
-                back_button_holiday = gr.Button("←", elem_classes=["back-button"])
-                gr.HTML("<h3>Configure Holiday Tool</h3>")
-                close_holiday_detail_btn = gr.Button("×", elem_classes=["tools-close"])
-            
-            with gr.Column(elem_classes=["tool-detail-content"]):
-                gr.HTML("""
-                <div class="tool-detail-title">Holiday</div>
-                <div class="tool-detail-description">
-                    Configure holiday-related tools to create posts based on upcoming holidays.
-                </div>
-                """)
-                
-                with gr.Column(elem_classes=["tool-detail-section"]):
-                    gr.HTML("<div class='tool-detail-section-title'>Required Tools</div>")
-                    
-                    get_business_context = gr.Checkbox(label="Get Business Context", value=True)
-                    get_upcoming_holidays = gr.Checkbox(label="Get Upcoming Holidays", value=True)
-                    
-                    gr.HTML("<p class='form-helper'>Note: 'Get Upcoming Holidays' is mandatory</p>")
-                
-                holiday_save_btn = gr.Button("Save Configuration", variant="primary", elem_classes=["save-btn"])
-
     # Tool detail view for Business Top Performing Posts
-    with gr.Group(visible=False, elem_id="tool-detail-view-business-posts") as business_posts_detail_view:
+    with gr.Group(visible=False, elem_id="tool-detail-view-business-posts", elem_classes=["tool-detail-view"]) as business_posts_detail_view:
         with gr.Column():
             with gr.Row(elem_classes=["tools-header"]):
-                back_button_business = gr.Button("←", elem_classes=["back-button"])
                 gr.HTML("<h3>Configure Business Posts Tool</h3>")
                 close_business_posts_detail_btn = gr.Button("×", elem_classes=["tools-close"])
             
@@ -1279,19 +1271,31 @@ def render(on_publish=None):
                 """)
                 
                 with gr.Column(elem_classes=["tool-detail-section"]):
-                    gr.HTML("<div class='tool-detail-section-title'>Select Platforms</div>")
+                    gr.HTML("<div class='tool-detail-section-title'>Select Channels</div>")
                     
-                    get_all_business_posts = gr.Checkbox(label="Get Top performing posts - all", value=True)
-                    get_facebook_business_posts = gr.Checkbox(label="Get Top performing posts - Facebook", value=False)
-                    get_twitter_business_posts = gr.Checkbox(label="Get Top performing posts - Twitter", value=False)
-                    get_instagram_business_posts = gr.Checkbox(label="Get Top performing posts - Instagram", value=False)
+                    get_facebook_business_posts = gr.Checkbox(label="Facebook", value=True)
+                    get_twitter_business_posts = gr.Checkbox(label="Twitter", value=True)
+                    get_instagram_business_posts = gr.Checkbox(label="Instagram", value=True)
                     
-                    gr.HTML("<p class='form-helper'>Note: At least one option must be selected</p>")
+                    gr.HTML("<p class='form-helper'>Note: Select at least one channel</p>")
                 
-                with gr.Column(elem_classes=["tool-detail-section"]):
+                # Config section becomes visible when at least one channel is selected
+                # Initial visibility is True since default checkbox values are all True
+                with gr.Column(elem_classes=["tool-detail-section"], visible=True) as business_config_section:
                     gr.HTML("<div class='tool-detail-section-title'>Configuration</div>")
                     
-                    num_business_posts = gr.Slider(minimum=1, maximum=20, value=5, step=1, label="Number of posts")
+                    business_posts_duration = gr.Radio(
+                        choices=["30", "60", "90"], 
+                        value="30", 
+                        label="Duration (days)"
+                    )
+                    
+                    business_posts_count = gr.Radio(
+                        choices=["10", "20", "30"], 
+                        value="10", 
+                        label="Number of top posts to fetch"
+                    )
+                    
                     business_posts_metric = gr.Radio(
                         choices=["Engagement", "Impression"], 
                         value="Engagement", 
@@ -1301,10 +1305,9 @@ def render(on_publish=None):
                 business_posts_save_btn = gr.Button("Save Configuration", variant="primary", elem_classes=["save-btn"])
 
     # Tool detail view for Competitor Top Performing Posts
-    with gr.Group(visible=False, elem_id="tool-detail-view-competitor-posts") as competitor_posts_detail_view:
+    with gr.Group(visible=False, elem_id="tool-detail-view-competitor-posts", elem_classes=["tool-detail-view"]) as competitor_posts_detail_view:
         with gr.Column():
             with gr.Row(elem_classes=["tools-header"]):
-                back_button_competitor = gr.Button("←", elem_classes=["back-button"])
                 gr.HTML("<h3>Configure Competitor Posts Tool</h3>")
                 close_competitor_posts_detail_btn = gr.Button("×", elem_classes=["tools-close"])
             
@@ -1317,19 +1320,31 @@ def render(on_publish=None):
                 """)
                 
                 with gr.Column(elem_classes=["tool-detail-section"]):
-                    gr.HTML("<div class='tool-detail-section-title'>Select Platforms</div>")
+                    gr.HTML("<div class='tool-detail-section-title'>Select Channels</div>")
                     
-                    get_all_competitor_posts = gr.Checkbox(label="Get Top performing posts - all", value=True)
-                    get_facebook_competitor_posts = gr.Checkbox(label="Get Top performing posts - Facebook", value=False)
-                    get_twitter_competitor_posts = gr.Checkbox(label="Get Top performing posts - Twitter", value=False)
-                    get_instagram_competitor_posts = gr.Checkbox(label="Get Top performing posts - Instagram", value=False)
+                    get_facebook_competitor_posts = gr.Checkbox(label="Facebook", value=True)
+                    get_twitter_competitor_posts = gr.Checkbox(label="Twitter", value=True)
+                    get_instagram_competitor_posts = gr.Checkbox(label="Instagram", value=True)
                     
-                    gr.HTML("<p class='form-helper'>Note: At least one option must be selected</p>")
+                    gr.HTML("<p class='form-helper'>Note: Select at least one channel</p>")
                 
-                with gr.Column(elem_classes=["tool-detail-section"]):
+                # Config section becomes visible when at least one channel is selected
+                # Initial visibility is True since default checkbox values are all True
+                with gr.Column(elem_classes=["tool-detail-section"], visible=True) as competitor_config_section:
                     gr.HTML("<div class='tool-detail-section-title'>Configuration</div>")
                     
-                    num_competitor_posts = gr.Slider(minimum=1, maximum=20, value=5, step=1, label="Number of posts")
+                    competitor_posts_duration = gr.Radio(
+                        choices=["30", "60", "90"], 
+                        value="30", 
+                        label="Duration (days)"
+                    )
+                    
+                    competitor_posts_count = gr.Radio(
+                        choices=["10", "20", "30"], 
+                        value="10", 
+                        label="Number of top posts to fetch"
+                    )
+                    
                     competitor_posts_metric = gr.Radio(
                         choices=["Engagement", "Impression"], 
                         value="Engagement", 
@@ -1338,36 +1353,10 @@ def render(on_publish=None):
                 
                 competitor_posts_save_btn = gr.Button("Save Configuration", variant="primary", elem_classes=["save-btn"])
 
-    # Tool detail view for Business Ideas / Post Ideas
-    with gr.Group(visible=False, elem_id="tool-detail-view-business-ideas") as business_ideas_detail_view:
-        with gr.Column():
-            with gr.Row(elem_classes=["tools-header"]):
-                back_button_ideas = gr.Button("←", elem_classes=["back-button"])
-                gr.HTML("<h3>Configure Business Ideas Tool</h3>")
-                close_business_ideas_detail_btn = gr.Button("×", elem_classes=["tools-close"])
-            
-            with gr.Column(elem_classes=["tool-detail-content"]):
-                gr.HTML("""
-                <div class="tool-detail-title">Business Ideas / Post Ideas</div>
-                <div class="tool-detail-description">
-                    Configure tools to generate business and post ideas.
-                </div>
-                """)
-                
-                with gr.Column(elem_classes=["tool-detail-section"]):
-                    gr.HTML("<div class='tool-detail-section-title'>Required Tools</div>")
-                    
-                    business_context = gr.Checkbox(label="Business Context", value=True, interactive=False)
-                    
-                    gr.HTML("<p class='form-helper'>Note: 'Business Context' is mandatory and cannot be disabled</p>")
-                
-                business_ideas_save_btn = gr.Button("Save Configuration", variant="primary", elem_classes=["save-btn"])
-
     # Tool detail view for Trending Topics
-    with gr.Group(visible=False, elem_id="tool-detail-view-trending") as trending_topics_detail_view:
+    with gr.Group(visible=False, elem_id="tool-detail-view-trending", elem_classes=["tool-detail-view"]) as trending_topics_detail_view:
         with gr.Column():
             with gr.Row(elem_classes=["tools-header"]):
-                back_button_trending = gr.Button("←", elem_classes=["back-button"])
                 gr.HTML("<h3>Configure Trending Topics Tool</h3>")
                 close_trending_topics_detail_btn = gr.Button("×", elem_classes=["tools-close"])
             
@@ -1380,161 +1369,77 @@ def render(on_publish=None):
                 """)
                 
                 with gr.Column(elem_classes=["tool-detail-section"]):
-                    gr.HTML("<div class='tool-detail-section-title'>Required Tools</div>")
+                    gr.HTML("<div class='tool-detail-section-title'>Configuration</div>")
                     
-                    fetch_trending_topics = gr.Checkbox(label="Fetch Trending Topics", value=True, interactive=False)
+                    trending_posts_count = gr.Radio(
+                        choices=["10", "20", "30"], 
+                        value="10", 
+                        label="Number of posts"
+                    )
                     
-                    gr.HTML("<p class='form-helper'>Note: 'Fetch Trending Topics' is mandatory and cannot be disabled</p>")
+                    trending_duration = gr.Radio(
+                        choices=["1", "7", "30"], 
+                        value="1", 
+                        label="Time period (days)"
+                    )
                 
                 trending_topics_save_btn = gr.Button("Save Configuration", variant="primary", elem_classes=["save-btn"])
+     
+    # Add event handlers for the checkboxes using the Python functions
+    
+    # Business Posts checkboxes
+    get_facebook_business_posts.change(
+        fn=update_business_config_visibility,
+        inputs=[get_facebook_business_posts, get_twitter_business_posts, get_instagram_business_posts],
+        outputs=[business_config_section]
+    )
+    
+    get_twitter_business_posts.change(
+        fn=update_business_config_visibility,
+        inputs=[get_facebook_business_posts, get_twitter_business_posts, get_instagram_business_posts],
+        outputs=[business_config_section]
+    )
+    
+    get_instagram_business_posts.change(
+        fn=update_business_config_visibility,
+        inputs=[get_facebook_business_posts, get_twitter_business_posts, get_instagram_business_posts],
+        outputs=[business_config_section]
+    )
+    
+    # Competitor Posts checkboxes
+    get_facebook_competitor_posts.change(
+        fn=update_competitor_config_visibility,
+        inputs=[get_facebook_competitor_posts, get_twitter_competitor_posts, get_instagram_competitor_posts],
+        outputs=[competitor_config_section]
+    )
+    
+    get_twitter_competitor_posts.change(
+        fn=update_competitor_config_visibility,
+        inputs=[get_facebook_competitor_posts, get_twitter_competitor_posts, get_instagram_competitor_posts],
+        outputs=[competitor_config_section]
+    )
+    
+    get_instagram_competitor_posts.change(
+        fn=update_competitor_config_visibility,
+        inputs=[get_facebook_competitor_posts, get_twitter_competitor_posts, get_instagram_competitor_posts],
+        outputs=[competitor_config_section]
+    )
             
-    # Add click events for each tool button to open detail view
-    holiday_btn.click(
-        fn=open_holiday_detail,
-        outputs=[holiday_detail_view, tools_modal]
-    )
-
-    business_posts_btn.click(
-        fn=open_business_posts_detail,
-        outputs=[business_posts_detail_view, tools_modal]
-    )
-
-    competitor_posts_btn.click(
-        fn=open_competitor_posts_detail,
-        outputs=[competitor_posts_detail_view, tools_modal]
-    )
-
-    business_ideas_btn.click(
-        fn=open_business_ideas_detail,
-        outputs=[business_ideas_detail_view, tools_modal]
-    )
-
-    trending_topics_btn.click(
-        fn=open_trending_topics_detail,
-        outputs=[trending_topics_detail_view, tools_modal]
-    )
-
-    # Back buttons for each tool detail view
-    back_button_holiday.click(
-        fn=close_all_tool_details,
-        outputs=[
-            holiday_detail_view, 
-            business_posts_detail_view, 
-            competitor_posts_detail_view, 
-            business_ideas_detail_view, 
-            trending_topics_detail_view, 
-            tools_modal
-        ]
-    )
-
-    back_button_business.click(
-        fn=close_all_tool_details,
-        outputs=[
-            holiday_detail_view, 
-            business_posts_detail_view, 
-            competitor_posts_detail_view, 
-            business_ideas_detail_view, 
-            trending_topics_detail_view, 
-            tools_modal
-        ]
-    )
-
-    back_button_competitor.click(
-        fn=close_all_tool_details,
-        outputs=[
-            holiday_detail_view, 
-            business_posts_detail_view, 
-            competitor_posts_detail_view, 
-            business_ideas_detail_view, 
-            trending_topics_detail_view, 
-            tools_modal
-        ]
-    )
-
-    back_button_ideas.click(
-        fn=close_all_tool_details,
-        outputs=[
-            holiday_detail_view, 
-            business_posts_detail_view, 
-            competitor_posts_detail_view, 
-            business_ideas_detail_view, 
-            trending_topics_detail_view, 
-            tools_modal
-        ]
-    )
-
-    back_button_trending.click(
-        fn=close_all_tool_details,
-        outputs=[
-            holiday_detail_view, 
-            business_posts_detail_view, 
-            competitor_posts_detail_view, 
-            business_ideas_detail_view, 
-            trending_topics_detail_view, 
-            tools_modal
-        ]
-    )
-
     # Close buttons for each tool detail view
-    close_holiday_detail_btn.click(
-        fn=close_all_tool_details,
-        outputs=[
-            holiday_detail_view, 
-            business_posts_detail_view, 
-            competitor_posts_detail_view, 
-            business_ideas_detail_view, 
-            trending_topics_detail_view, 
-            tools_modal
-        ]
-    )
-
     close_business_posts_detail_btn.click(
-        fn=close_all_tool_details,
-        outputs=[
-            holiday_detail_view, 
-            business_posts_detail_view, 
-            competitor_posts_detail_view, 
-            business_ideas_detail_view, 
-            trending_topics_detail_view, 
-            tools_modal
-        ]
+        fn=close_tool_details,
+        outputs=[business_posts_detail_view]
     )
 
     close_competitor_posts_detail_btn.click(
-        fn=close_all_tool_details,
-        outputs=[
-            holiday_detail_view, 
-            business_posts_detail_view, 
-            competitor_posts_detail_view, 
-            business_ideas_detail_view, 
-            trending_topics_detail_view, 
-            tools_modal
-        ]
-    )
-
-    close_business_ideas_detail_btn.click(
-        fn=close_all_tool_details,
-        outputs=[
-            holiday_detail_view, 
-            business_posts_detail_view, 
-            competitor_posts_detail_view, 
-            business_ideas_detail_view, 
-            trending_topics_detail_view, 
-            tools_modal
-        ]
+        fn=close_tool_details,
+        outputs=[competitor_posts_detail_view]
     )
 
     close_trending_topics_detail_btn.click(
-        fn=close_all_tool_details,
-        outputs=[
-            holiday_detail_view, 
-            business_posts_detail_view, 
-            competitor_posts_detail_view, 
-            business_ideas_detail_view, 
-            trending_topics_detail_view, 
-            tools_modal
-        ]
-    )            
+        fn=close_tool_details,
+        outputs=[trending_topics_detail_view]
+    )
 
     # === Top Heading + Buttons in Full Width ===
     with gr.Row(elem_id="task-header-full"):
@@ -1556,37 +1461,15 @@ def render(on_publish=None):
         outputs=[settings_modal]
     )
     
-    # Open tools modal
-    tools_btn_list = []
-    
-    # Close tools modal
-    close_tools_btn.click(
-        fn=close_tools_modal,
-        outputs=[
-            tools_modal, 
-            holiday_detail_view, 
-            business_posts_detail_view, 
-            competitor_posts_detail_view, 
-            business_ideas_detail_view, 
-            trending_topics_detail_view
-        ]
-    )
-    
     # Add save button handlers for tool configurations
-    holiday_save_btn.click(
-        fn=save_holiday_config,
-        inputs=[get_business_context, get_upcoming_holidays],
-        outputs=[status_message]
-    )
-
     business_posts_save_btn.click(
         fn=save_business_posts_config,
         inputs=[
-            get_all_business_posts, 
             get_facebook_business_posts, 
             get_twitter_business_posts, 
             get_instagram_business_posts,
-            num_business_posts,
+            business_posts_duration,
+            business_posts_count,
             business_posts_metric
         ],
         outputs=[status_message]
@@ -1595,25 +1478,22 @@ def render(on_publish=None):
     competitor_posts_save_btn.click(
         fn=save_competitor_posts_config,
         inputs=[
-            get_all_competitor_posts, 
             get_facebook_competitor_posts, 
             get_twitter_competitor_posts, 
             get_instagram_competitor_posts,
-            num_competitor_posts,
+            competitor_posts_duration,
+            competitor_posts_count,
             competitor_posts_metric
         ],
         outputs=[status_message]
     )
 
-    business_ideas_save_btn.click(
-        fn=save_business_ideas_config,
-        inputs=[business_context],
-        outputs=[status_message]
-    )
-
     trending_topics_save_btn.click(
         fn=save_trending_topics_config,
-        inputs=[fetch_trending_topics],
+        inputs=[
+            trending_posts_count,
+            trending_duration
+        ],
         outputs=[status_message]
     )
 
@@ -1623,7 +1503,7 @@ def render(on_publish=None):
             ("Analyze content based on Business specific post ideas", "Generate post ideas based on the business context.", "Post ideas"),
             ("Analyze content for Upcoming holidays","Generate post for upcoming holidays.", "Holiday ideas"),
             ("Suggest content based on top performing post","Generate new posts based on your top performing posts.", "My posts"),
-            ("Content based on your competitors' posts","Generate new posts based on your top performing posts.", "Competitor posts"),
+            ("Content based on your competitors' posts","Generate new posts based on your competitors' top performing posts.", "Competitor posts"),
             ("Analyze content based on the trends","Create posts based on the latest trends", "Trending")
         ]
 
@@ -1643,28 +1523,32 @@ def render(on_publish=None):
                             with gr.Group(elem_classes=["light-prompt-box"]):
                                 main_prompt = gr.Textbox(
                                     value=f" {title}",
-                                    interactive=True,
+                                    interactive=False,
                                     show_label=False,
                                     lines=2,
-                                    # elem_id=f"main-prompt-{i}"
                                 )
-                                tools_btn = gr.Button("🔧 Tools", elem_classes=["tools-btn"])
-                                tools_btn_list.append(tools_btn)
-                                tools_btn.click(
-                                    fn=open_tools_modal,
-                                    outputs=[
-                                        tools_modal, 
-                                        holiday_detail_view, 
-                                        business_posts_detail_view, 
-                                        competitor_posts_detail_view, 
-                                        business_ideas_detail_view, 
-                                        trending_topics_detail_view
-                                    ]
-                                )
-                            all_main_prompts.append(main_prompt)
-                        
-                        # tag_btn = gr.Button(f"⚙️ {tag}", size="sm", scale=2)
-                        # tag_btn.click(fn=lambda t=tag: tag_clicked(t), outputs=[])
+                                
+                                # Add tool buttons only for specific tasks
+                                if tag == "My posts":
+                                    tools_btn = gr.Button("🔧 Tools", elem_classes=["tools-btn"])
+                                    tools_btn.click(
+                                        fn=open_business_posts_detail,
+                                        outputs=[business_posts_detail_view]
+                                    )
+                                elif tag == "Competitor posts":
+                                    tools_btn = gr.Button("🔧 Tools", elem_classes=["tools-btn"])
+                                    tools_btn.click(
+                                        fn=open_competitor_posts_detail,
+                                        outputs=[competitor_posts_detail_view]
+                                    )
+                                elif tag == "Trending":
+                                    tools_btn = gr.Button("🔧 Tools", elem_classes=["tools-btn"])
+                                    tools_btn.click(
+                                        fn=open_trending_topics_detail,
+                                        outputs=[trending_topics_detail_view]
+                                    )
+                                
+                                all_main_prompts.append(main_prompt)
 
                     # For extra prompts
                     prompt_count = gr.State(0)
@@ -1678,18 +1562,6 @@ def render(on_publish=None):
                                 interactive=True,
                                 show_label=False,
                                 lines=2
-                            )
-                            extra_tools_btn = gr.Button("🔧 Tools", elem_classes=["tools-btn"])
-                            extra_tools_btn.click(
-                                fn=open_tools_modal,
-                                outputs=[
-                                    tools_modal, 
-                                    holiday_detail_view, 
-                                    business_posts_detail_view, 
-                                    competitor_posts_detail_view, 
-                                    business_ideas_detail_view, 
-                                    trending_topics_detail_view
-                                ]
                             )
                             extra_prompts.append(extra_prompt)
                             extra_prompts_containers.append(extra_container)
@@ -1709,12 +1581,10 @@ def render(on_publish=None):
                     outputs=[content_block]
                 )
     
-    print("all_toggles ------ ------ ----- ", all_toggles)
-    print("all_main_prompts ------ ------ ----- ", all_main_prompts)
     # Save settings
     save_settings_btn.click(
         fn=update_account_id_and_load_draft,
-        inputs=[account_id_input],
+        inputs=[account_id_radio],
         outputs=[settings_status, settings_modal] + all_toggles + all_main_prompts
     )
 
@@ -1731,5 +1601,140 @@ def render(on_publish=None):
         fn=publish_from_draft,
         outputs=[status_message]
     )
+    
+    # Add HTML for modal positioning help
+    gr.HTML("""
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Status message handling
+        const observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                if (mutation.type === 'childList' && mutation.target.id === 'status-message') {
+                    if (mutation.target.textContent.trim() !== '') {
+                        // Clear any existing timeout
+                        if (window.statusMessageTimeout) {
+                            clearTimeout(window.statusMessageTimeout);
+                        }
+                        
+                        // Remove fade-out class if it exists
+                        mutation.target.classList.remove('fade-out');
+                        
+                        // Set timeout to add fade-out class after 5 seconds
+                        window.statusMessageTimeout = setTimeout(function() {
+                            mutation.target.classList.add('fade-out');
+                        }, 5000);
+                    }
+                }
+            });
+        });
+        
+        // Start observing the status message element once it's available
+        setTimeout(function() {
+            const statusMessage = document.getElementById('status-message');
+            if (statusMessage) {
+                observer.observe(statusMessage, { childList: true, subtree: true });
+            }
+        }, 1000);
+        
+        // Function to handle tool button clicks
+        function handleToolButtonClick(e) {
+            const button = e.currentTarget;
+            const rect = button.getBoundingClientRect();
+            
+            // Find which modal should be shown based on the button clicked
+            let targetModalId = null;
+            if (button.textContent.includes('Tools')) {
+                if (button.closest('.task-card:nth-child(3)')) {
+                    targetModalId = 'tool-detail-view-business-posts';
+                } else if (button.closest('.task-card:nth-child(4)')) {
+                    targetModalId = 'tool-detail-view-competitor-posts';
+                } else if (button.closest('.task-card:nth-child(5)')) {
+                    targetModalId = 'tool-detail-view-trending';
+                }
+            }
+            
+            if (targetModalId) {
+                // Find the modal element
+                const modal = document.getElementById(targetModalId);
+                if (modal) {
+                    // Ensure the main content shifts to make room for the modal
+                    document.body.style.paddingRight = '420px';
+                    
+                    // Set a small timeout to ensure the modal is visible first
+                    setTimeout(() => {
+                        // Scroll to keep the button in view if needed
+                        const scrollPosition = window.scrollY;
+                        const buttonTop = rect.top + scrollPosition;
+                        
+                        if (buttonTop < scrollPosition || buttonTop > scrollPosition + window.innerHeight - 100) {
+                            window.scrollTo({
+                                top: Math.max(0, buttonTop - 150),
+                                behavior: 'smooth'
+                            });
+                        }
+                    }, 100);
+                }
+            }
+        }
+        
+        // Close button handling - reset padding
+        setTimeout(function() {
+            const closeButtons = document.querySelectorAll('.tools-close');
+            closeButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    document.body.style.paddingRight = '0';
+                });
+            });
+            
+            // Find and add event listeners to all tool buttons
+            const toolButtons = document.querySelectorAll('.tools-btn');
+            toolButtons.forEach(button => {
+                button.addEventListener('click', handleToolButtonClick);
+            });
+        }, 1000);
+    });
+            // Add this to your existing JavaScript
+document.addEventListener('DOMContentLoaded', function() {
+    // Debug settings modal and dropdown
+    setTimeout(function() {
+        console.log('Looking for dropdown...');
+        const dropdown = document.querySelector('#account-dropdown select, .gradio-dropdown select');
+        if (dropdown) {
+            console.log('Dropdown found:', dropdown);
+            
+            // Make dropdown more visible and interactive
+            dropdown.style.opacity = '1';
+            dropdown.style.pointerEvents = 'auto';
+            dropdown.style.zIndex = '1050';
+            
+            // Try to force it to be interactive
+            dropdown.disabled = false;
+            dropdown.tabIndex = 0;
+            
+        } else {
+            console.error('Dropdown not found');
+        }
+        
+        // Also handle settings button to ensure modal appears correctly
+        const settingsBtn = document.getElementById('settings-btn');
+        if (settingsBtn) {
+            settingsBtn.addEventListener('click', function() {
+                console.log('Settings button clicked');
+                setTimeout(function() {
+                    // Force dropdown to be visible and interactive after modal opens
+                    const dropdown = document.querySelector('#account-dropdown select, .gradio-dropdown select');
+                    if (dropdown) {
+                        dropdown.style.opacity = '1';
+                        dropdown.style.pointerEvents = 'auto';
+                        dropdown.style.zIndex = '1050';
+                        dropdown.disabled = false;
+                    }
+                }, 100);
+            });
+        }
+    }, 1000);
+});
+    </script>
+    """)
     
     return status_message
