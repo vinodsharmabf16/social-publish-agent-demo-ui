@@ -263,8 +263,8 @@ class SocialMediaPostGenerator:
         total = state["total_post"]
         categories = state["categories"]
         businessId = state['small_id']
-        num_days = state['number_of_days']
-        last_message = state["last_call"]
+        num_days = total #state['number_of_days']
+
         tools = [get_upcoming_week_holidays, get_business_meta]
 
         if PostType.HOLIDAY_POST.name in categories and total > 0:
@@ -592,8 +592,7 @@ class SocialMediaPostGenerator:
 
         # Define a specialized model for batch output
         class BusinessBatchOutput(BaseModel):
-            posts: List[dict] = Field(description="List of business posts with 'post', 'idea' and 'keywords' fields")
-            # ideas: List
+            posts: List[dict] = Field(description="List of objects with three string fields 'post', 'idea' and 'keywords'")
             error_message: Optional[str] = Field(description="Optional error message if there was an issue",
                                                  default=None)
 
@@ -716,7 +715,7 @@ class SocialMediaPostGenerator:
 
 
         input_prompt = (f'\n\n Do not generate more than {count} posts.\n'
-                        f'EnterpriseId: {str(enterpriseId)}\n Page Size: {config["num_posts"]}\n'
+                        f'EnterpriseId: {str(enterpriseId)}\n Page Size: {config["num_posts"]/len(channels)}\n'
                         f'Channels: {channels}\n Time period: {"last " + str(config["duration"]) + " days"}')
 
         # Create the prompt template with system content
@@ -766,7 +765,6 @@ class SocialMediaPostGenerator:
     def combine_posts(self, state: MessagesState) -> dict:
         all_posts = state["holiday_outputs"] + state["business_outputs"] + state["repurpose_outputs"] + state[
             'competitor_outputs'] + state['trending_outputs']
-        print("ALL POSTS : ", all_posts)  
 
         enriched = [{"content": post, 'source': post['source'], "image_url": self._get_image_for_post(post['keywords'])} for post in all_posts]
         return {"combined_posts": enriched}
@@ -866,9 +864,7 @@ input_payload= {
   "categories": [
     "BUSINESS_IDEAS_POST",
     "HOLIDAY_POST",
-    "REPURPOSED_POST",
-    "COMP",
-    "TRENDING"
+    "REPURPOSED_POST"
   ],
   "prompt_config": {
     "BUSINESS_IDEAS_POST": [
