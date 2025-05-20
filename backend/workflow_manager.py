@@ -713,10 +713,10 @@ class SocialMediaPostGenerator:
         if user_prompts:
             user_prompts = default_user_prompt + user_prompts
 
-
         input_prompt = (f'\n\n Do not generate more than {count} posts.\n'
                         f'EnterpriseId: {str(enterpriseId)}\n Page Size: {config["num_posts"]/len(channels)}\n'
-                        f'Channels: {channels}\n Time period: {"last " + str(config["duration"]) + " days"}')
+                        f'Channels: {channels}\n Time period: {"last " + str(config["duration"]) + " days"}'
+                        f'\n{user_prompts}')
 
         # Create the prompt template with system content
         prompt = ChatPromptTemplate.from_messages([
