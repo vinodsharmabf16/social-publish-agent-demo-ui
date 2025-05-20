@@ -214,7 +214,7 @@ def get_useful_posts(channels, accountId, startDate, endDate=currentDate, pageSi
         url = f"http://socialapi.birdeye.com/social/insights/es/{channel}/post?sortParam=posted_date&startIndex=0&sortOrder=DESC&pageSize={pageSize}"
 
         payload = json.dumps({
-            "businessIds": businessIds[accountId],
+            "businessIds": businessIds.get(accountId, []),
             "startDate": startDate,
             "endDate": endDate,
             "reportType": "POST_INSIGHT",
