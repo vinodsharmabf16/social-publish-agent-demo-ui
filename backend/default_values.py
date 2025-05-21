@@ -24,7 +24,8 @@ from datetime import datetime, timedelta, timezone
 from typing import Dict, List
 
 
-from datetime import datetime
+from datetime import datetime, date
+
 
 
 
@@ -143,26 +144,33 @@ Below might also be some values which may or may not be useful for tool calling.
 
 competitor_system_prompt = '''
 You are a social media content writer/post creator. Your task is to create social media posts for a business using the content from competitors' posts.
-Objectives:
+### Objectives:
 To create proper posts which drives value to the business and its customers.
 To strictly follow the instructions given mentioned below and give preferences to the user instructions if any.
-Instructions:
-1. Create {count} social media posts using content from competitors for the given business.
-2. Check the tool catalog for the definition and use the appropriate tool to fetch the data. Business name and tools to invoke.
-```Business Name: {business_name}, Tools: {tools_list}
-3. Use the config {config} for each tool on specific constraints strictly for further analysis. Follow the filtering in the same order below.
- duration - based on published date filter latest posts till specified duration-> evaluation metric for posts -> num_posts - no of posts to fetch for analysis. 
-4. From the fetched posts, evaluate and classify each post using the following rules:
+To ensure config is followed strictly in priority order and consistently perform the analysis.
+### Instructions:
+Step 1. Create {count} social media posts using content from competitors for the given business.
+Step 2. Check the tool catalog for the definition and use the appropriate tool to fetch the data. Business name and tools to invoke.
+Tools: {tools_list} 
+```Business Name: {business_name}, Based on {config} if evaluation_metric is 'Engagement' means `engagement` is 1 else 0 and `duration` (in days).
+Step 3. Use the config {config} for each tool on specific constraints strictly for further analysis. 
+Step 4. From Step 3. the fetched posts, evaluate and classify each post using the following rules:
 <useful> - if the post content is reusable or adaptable for future business posts.
 <useless> -  if it is highly specific (e.g., direct promotions, personal wishes, staff announcements).
 <failure> -  if the post content is missing or unreadable.
 Only proceed with posts marked as <useful> for further content generation tailored to the business {business_name}.
-After all analysis, proceed with filtered final set of data.
-5. Before generating the posts, provide intermediate steps of what all data you are fetching after above steps before you are generating posts.
+If no posts are marked as <useful>, analyse again and pick atleast 1 best to proceed further, pick leniently. 
+Step 5. Before generating the posts, provide intermediate steps of what all data you are fetching after above steps before you generate posts.
 should include tool name, number of posts in a tool, published date, evaluation metric only.
-<tool_name><filtered_date_list_taken_finally><evaluation_metric_list><number_of_posts_per_tool>
-<print the filtered intermediate data> used for analysis. This is just for intermediate step to verify filtered data is inline with config.
-6. After analysis, generate the posts using the filtered data and output strictly in the below format {format_instructions_list} if no posts are available, just return empty list in the final output format.
+<!-- Follow step 3 strictly to filter the posts. -->
+<filtered_posts_tool_level_list>
+Tool Name: Tool name from where posts are fetched
+Published Date: Published date of the posts in readable time format (filtered based on config `duration`.)
+Evaluation Metric: Evaluation metric for posts (to verify with evaluation metric in config)
+Total Posts: Number of posts fetched from the tool (to verify with num_posts in config)
+</filtered_posts_tool_level_list
+used for analysis. This is just for intermediate step to verify filtered data is inline with config.
+Step 6. After analysis, generate the posts using the filtered data and output strictly in the below format {format_instructions_list} if no posts are available, just return empty list in the final output format.
 '''
 
 
@@ -241,6 +249,7 @@ def get_useful_posts(channels, accountId, startDate, endDate=currentDate, pageSi
                     if '<useful>' in response.text():
                         posts.append({'post':post, 'channel':channel})
 
+    print(posts)
     return posts
 
 
@@ -317,7 +326,8 @@ businessIds = {1148914: [1159063,1159067,1181902,1181903,1181904,1181905,1181906
                          1225244,1225245,1229151,1229152,1229153,1229154,1314340,1541748],
                1230007: [1230008,1234600,1234601,1234602,1234603,1234604,1234622,1234623,1234624,1234625,1234626,1234627,1234628,1234629,1234630,1234631,1234632,1234633,1234634,1234635,1234636,1234637,1234638,1234639,1234640,1234641,1234642,1234643,1234644,1234645,1234646,1234647,1234648,1234649,1234650,1234651,1234652,1234653,1234654,1234655,1234656,1234657,1234658,1234659,1234660,1234661,1234662,1234663,1234664,1234665,1234666,1234667,1234668,1234669,1234670,1234671,1234672,1234673,1234674,1234675,1234676,1234677,1234678,1234679,1234680,1234681,1234682,1234683,1234684,1234685,1234686,1234687,1234688,1234689,1234690,1234691,1234692,1234693,1234694,1234695,1234696,1234697,1234698,1234699,1234700,1234701,1234702,1234703,1234704,1234705,1234706,1234707,1234708,1234709,1234710,1234711,1234712,1234713,1234714,1234715,1234716,1234717,1234718,1234719,1234720,1234722,1264924],
                1264350: [1276093,1276241,1276242,1276243,1276244,1276245,1276246,1276247,1276248,1276249,1276250,1302236,1302237,1302238,1302239,1302240,1302241,1302242,1302243,1302244,1302245,1302246,1302247,1302248,1302249,1302250,1302251,1302252,1302253,1302254,1302255,1302256,1302257,1302258,1302259,1302260,1302261,1302262,1302263,1302264,1302265,1302266,1302267,1302268,1302269,1302270,1302271,1302272,1302273,1302274,1302275,1302276,1302277,1302278,1302279,1302280,1302281,1302282,1302283,1302284,1302285,1302286,1302287,1302288,1302289,1302290,1302291,1302292,1302293,1302294,1302295,1302296,1302297,1302298,1302299,1302300,1302301,1302302,1302303,1302304,1302305,1302306,1302307,1302308,1302309,1302310,1302311,1302313,1302314,1302315,1302316,1302317,1302318,1302319,1302320,1302321,1302322,1302323,1302324,1302325,1302326,1302327,1302328,1302329,1302330,1302331,1302332,1302333,1302334,1302335,1302336,1302337,1302338,1302339,1302340,1302341,1302342,1302343,1302344,1302345,1302346,1302347,1302348,1302349,1302350,1302351,1302352,1302353,1302354,1302355,1302356,1304487,1312185,1333277,1342640,1342641,1345774,1373460,1373461,1373462,1373914,1453562,1453566,1453568,1492966,1492968,1492969,1492970,1493737,1507969,1531412,1531413,1534274],
-               26164: [1230008,1234600,1234601,1234602,1234603,1234604,1234622,1234623,1234624,1234625,1234626,1234627,1234628,1234629,1234630,1234631,1234632,1234633,1234634,1234635,1234636,1234637,1234638,1234639,1234640,1234641,1234642,1234643,1234644,1234645,1234646,1234647,1234648,1234649,1234650,1234651,1234652,1234653,1234654,1234655,1234656,1234657,1234658,1234659,1234660,1234661,1234662,1234663,1234664,1234665,1234666,1234667,1234668,1234669,1234670,1234671,1234672,1234673,1234674,1234675,1234676,1234677,1234678,1234679,1234680,1234681,1234682,1234683,1234684,1234685,1234686,1234687,1234688,1234689,1234690,1234691,1234692,1234693,1234694,1234695,1234696,1234697,1234698,1234699,1234700,1234701,1234702,1234703,1234704,1234705,1234706,1234707,1234708,1234709,1234710,1234711,1234712,1234713,1234714,1234715,1234716,1234717,1234718,1234719,1234720,1234722,1264924]}
+               26164: [1230008,1234600,1234601,1234602,1234603,1234604,1234622,1234623,1234624,1234625,1234626,1234627,1234628,1234629,1234630,1234631,1234632,1234633,1234634,1234635,1234636,1234637,1234638,1234639,1234640,1234641,1234642,1234643,1234644,1234645,1234646,1234647,1234648,1234649,1234650,1234651,1234652,1234653,1234654,1234655,1234656,1234657,1234658,1234659,1234660,1234661,1234662,1234663,1234664,1234665,1234666,1234667,1234668,1234669,1234670,1234671,1234672,1234673,1234674,1234675,1234676,1234677,1234678,1234679,1234680,1234681,1234682,1234683,1234684,1234685,1234686,1234687,1234688,1234689,1234690,1234691,1234692,1234693,1234694,1234695,1234696,1234697,1234698,1234699,1234700,1234701,1234702,1234703,1234704,1234705,1234706,1234707,1234708,1234709,1234710,1234711,1234712,1234713,1234714,1234715,1234716,1234717,1234718,1234719,1234720,1234722,1264924]
+               }
 
 class PostType(Enum):
     HOLIDAY_POST = 1
@@ -540,41 +550,71 @@ def format_slots(slots: List[Dict[str, str]]) -> List[Dict[str, str]]:
 
 
 ### Tool to fetch competitors data########
+
 @tool
-def fetch_business_competitors_all(business_name: str) -> Dict[str, Any]:
-    """Fetches competitors data for a given business name and other filters if applicable in the given instruction
-     publisheddata will be in epoch time format use it accordingly.
+def fetch_business_competitors_facebook(business_name: str,duration: int,engagement: int) -> Dict[str, Any]:
+    """Fetches competitors data for a given business name and channel 'Facebook'
+     duration - from current date and publishedDate should be within the given duration.
+    engagement - should be greater than the given engagement.
     """
+    today_start = datetime.combine(date.today(), datetime.min.time())
+    today_epoch_millis = int(today_start.timestamp() * 1000)
     with open("competitors_mock.json", "r") as f:
         competitors_data = json.load(f)
         if business_name in competitors_data:
-            competitors_data = competitors_data[business_name]
-            return f"Below is the competitors data {competitors_data}"
+            posts = competitors_data.get(business_name, {}).get("postData", [])
+            results = [
+    post for post in posts
+    if (
+        post.get("channel") == "facebook"
+        and (today_epoch_millis - post.get("publishedDate", 0)) <= (duration *24 * 60 * 60 * 1000)
+    )
+]
+            return f"Below is the competitors data {results}"
+    return "No Data Found"
+@tool
+def fetch_business_competitors_instagram(business_name: str,duration: int,engagement: int) -> Dict[str, Any]:
+    """Fetches competitors data for a given business name  and channel 'Instagram',
+      duration - from current date and publishedDate should be within the given duration.
+    engagement - should be greater than the given engagement.
+    """
+    results = []
+    today_start = datetime.combine(date.today(), datetime.min.time())
+    today_epoch_millis = int(today_start.timestamp() * 1000)
+    with open("competitors_mock.json", "r") as f:
+        competitors_data = json.load(f)
+        if business_name in competitors_data:
+            posts = competitors_data.get(business_name, {}).get("postData", [])
+            results = [
+    post for post in posts
+    if (
+        post.get("channel") == "instagram"
+        and (today_epoch_millis - post.get("publishedDate", 0)) <= (duration *24 * 60 * 60 * 1000)
+    )
+]
+        return f"Below is the competitors data {results}"
     return "No Data Found"
 
 @tool
-def fetch_business_competitors_facebook(business_name: str) -> Dict[str, Any]:
-    """Fetches competitors data for a given business name and channel 'Facebook'
-    publisheddata will be in epoch time format use it accordingly.
+def fetch_business_competitors_twitter(business_name: str,duration: int,engagement: int) -> Dict[str, Any]:
+    """Fetches competitors data for a given business name  and platform 'Twitter'
+    duration - from current date and publishedDate should be within the given duration.
+    engagement - should be greater than the given engagement.
     """
+    today_start = datetime.combine(date.today(), datetime.min.time())
+    today_epoch_millis = int(today_start.timestamp() * 1000)
     with open("competitors_mock.json", "r") as f:
         competitors_data = json.load(f)
         if business_name in competitors_data:
             posts = competitors_data.get(business_name, {}).get("postData", [])
-            results = [post for post in posts if post.get("channel") == "facebook"]
-            return f"Below is the competitors data {results}"
-    return "No Data Found"
-@tool
-def fetch_business_competitors_instagram(business_name: str) -> Dict[str, Any]:
-    """Fetches competitors data for a given business name  and platform 'Instagram'
-     publisheddata will be in epoch time format use it accordingly.
-    """
-    with open("competitors_mock.json", "r") as f:
-        competitors_data = json.load(f)
-        if business_name in competitors_data:
-            posts = competitors_data.get(business_name, {}).get("postData", [])
-            results = [post for post in posts if post.get("channel") == "instagram"]
-            return f"Below is the competitors data {results}"
+            results = [
+    post for post in posts
+    if (
+        post.get("channel") == "twitter"
+        and (today_epoch_millis - post.get("publishedDate", 0)) <= (duration *24 * 60 * 60 * 1000)
+    )
+]
+        return f"Below is the competitors data {results}"
     return "No Data Found"
 
 # @tool
