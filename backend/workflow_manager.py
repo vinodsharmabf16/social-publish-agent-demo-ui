@@ -16,7 +16,7 @@ from pydantic import BaseModel, Field
 
 from default_values import *
 
-load_dotenv()
+load_dotenv(override=True)
 
 class MessagesState(TypedDict):
     # input payload
@@ -715,6 +715,7 @@ class SocialMediaPostGenerator:
                 results.append(parsed_result)
                 parsed_results_flatten = []
                 if len(results) == 0:
+                    print("Could find any useful competitor post to generate a new post.")
                     return {"competitor_outputs": []}
                 for i in results:
                     post_contents = i.posts
