@@ -492,7 +492,7 @@ def load_draft_for_account(account_id):
         # Create default values for all fields
         toggle_values = [True] * 5
         prompt_values = [
-            " Generate post ideas based on the business context.",
+            " Generate post based on the business context.",
             " Generate post for upcoming holidays.",
             " Generate new posts based on your top performing posts.",
             " Generate new posts based on your top performing posts.",
@@ -784,6 +784,7 @@ def render(on_publish=None):
         .light-prompt-box {
             position: relative;
             width: 100%; /* Make it full width */
+            height: auto;
         }
         
         .light-prompt-box textarea {
@@ -1249,7 +1250,7 @@ def render(on_publish=None):
             # )
             account_id_radio = gr.Radio(
             label="Select Account", 
-            choices=["Village_Pet_Care", "American_Senior_Communities", "Fidelity_Bank"],
+            choices=["Village_Pet_Care", "American_Senior_Communities", "Fidelity_Bank", "Aspen"],
             value="Village_Pet_Care"
         )
         
@@ -1501,7 +1502,7 @@ def render(on_publish=None):
     # === Main task section
     with gr.Column(elem_classes=["task-wrapper"]):
         task_data = [
-            ("Analyze content based on Business specific post ideas", "Generate post ideas based on the business context.", "Post ideas"),
+            ("Analyze content based on Business specific post ideas", "Generate post based on the business context.", "Post ideas"),
             ("Analyze content for Upcoming holidays","Generate post for upcoming holidays.", "Holiday ideas"),
             ("Suggest content based on top performing post","Generate new posts based on your top performing posts.", "My posts"),
             ("Content based on your competitors' posts","Generate new posts based on your competitors' top performing posts.", "Competitor posts"),
@@ -1526,7 +1527,9 @@ def render(on_publish=None):
                                     value=f" {title}",
                                     interactive=False,
                                     show_label=False,
-                                    lines=2,
+                                    lines=1,
+                                    max_lines=1,
+                                    scale=1,
                                 )
                                 
                                 # Add tool buttons only for specific tasks
@@ -1562,7 +1565,8 @@ def render(on_publish=None):
                                 placeholder="New prompt...",
                                 interactive=True,
                                 show_label=False,
-                                lines=2
+                                lines=1,
+                                max_lines=1,
                             )
                             extra_prompts.append(extra_prompt)
                             extra_prompts_containers.append(extra_container)

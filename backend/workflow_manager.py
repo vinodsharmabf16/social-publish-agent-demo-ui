@@ -56,7 +56,7 @@ class PostContent(BaseModel):
     keywords: str = Field(description="image caption to search on pixel/pexabay which can be used in the post")
 
 class PostList(BaseModel):
-    posts: List[PostContent]
+    posts: List[PostContent] = Field(description="List of posts with 'post' and 'keywords' fields , if no posts generated, return empty list")
 
 class HolidayOutput(BaseModel):
     post: str = Field(description="The post generated")
@@ -263,7 +263,7 @@ class SocialMediaPostGenerator:
         total = state["total_post"]
         categories = state["categories"]
         businessId = state['small_id']
-        num_days = state['number_of_days']
+        num_days = total
         last_message = state["last_call"]
         tools = [get_upcoming_week_holidays, get_business_meta]
 
@@ -523,56 +523,56 @@ class SocialMediaPostGenerator:
     
     ############# Updated Code with Tools ###############################
     def get_competitor_agent(self, state: MessagesState) -> dict:
-        """
-        Retrieves competitor posts (company-specific events, testimonials, seasonal offers) for a given business.
-        """
-        count = state['competitor_post_count']
-        if count == 0:
-            return {"competitor_outputs": []}
-        results = []
-        
-        tool_names = [item["name"] for item in state["tools"]["COMP"]]
-        # Filter functions and descriptions from TOOLS_REGISTRY
-        tool_functions = [TOOLS_REGISTRY[name]["function"] for name in tool_names if name in TOOLS_REGISTRY]
-        descriptions = {name: TOOLS_REGISTRY[name]["description"] for name in tool_names if name in TOOLS_REGISTRY}
-        agent = initialize_agent(
-            tools=tool_functions,
-            llm=self.llm_competitor,
-            agent=AgentType.OPENAI_FUNCTIONS,
-            verbose=True
-        )
-        user_prompt = state['prompt_config'].get('competitor')
-        business_name = state['business_name']
-
-        system_prompt = competitor_system_prompt.format(count=count,business_name=business_name, tools_list=descriptions,
-                                                        config=state['tools']['COMP'],
-                                                        format_instructions_list=format_instructions_list)
-        
-        prompt = f"""create post based on competitor posts and instructions provided.
-        
-        output Instructions: {format_instructions_list}
-        """
-        if user_prompt:
-            prompt = default_user_prompt+ f"Below are the instructions given by the user as constrainsts: 'User instructions: {user_prompt}'"
-        sys_msg = SystemMessage(
-            content=system_prompt
+            """
+            Retrieves competitor posts (company-specific events, testimonials, seasonal offers) for a given business.
+            """
+            count = state['competitor_post_count']
+            if count == 0:
+                return {"competitor_outputs": []}
+            results = []
+            
+            tool_names = [item["name"] for item in state["tools"]["COMP"]]
+            # Filter functions and descriptions from TOOLS_REGISTRY
+            tool_functions = [TOOLS_REGISTRY[name]["function"] for name in tool_names if name in TOOLS_REGISTRY]
+            descriptions = {name: TOOLS_REGISTRY[name]["description"] for name in tool_names if name in TOOLS_REGISTRY}
+            agent = initialize_agent(
+                tools=tool_functions,
+                llm=self.llm_competitor,
+                agent=AgentType.OPENAI_FUNCTIONS,
+                verbose=True
             )
-        messages = [sys_msg, HumanMessage(content=prompt)]
-        result = agent.run(messages)
-        if result:
-            parsed_result = output_parser_list.parse(result)
-            results.append(parsed_result)
-            parsed_results_flatten = []
-            for i in results:
-                post_contents = i.posts
-                for j in post_contents:
-                    j = j.model_dump()
-                    j['source'] = "COMPETITORS"
-                    parsed_results_flatten.extend([j])
-            return {"competitor_outputs": parsed_results_flatten}
+            user_prompt = state['prompt_config'].get('competitor')
+            business_name = state['business_name']
+        
+            
 
-        return {"error": f"No competitor data found for business: {business_name}"}
+            system_prompt = competitor_system_prompt.format(count=count,business_name=business_name, tools_list=descriptions, config=state['tools']['COMP'], format_instructions_list=format_instructions_list)
+            prompt = f"""create {count} post(s) based on competitor posts and instructions provided.
+            Follow the config instructions stricly. \
+            Strictly follow the Output format instuctions: {format_instructions_list}"""
+            if user_prompt:
+                prompt = default_user_prompt+ f"Below are the instructions given by the user as constrainsts: 'User instructions: {user_prompt}'"
+            sys_msg = SystemMessage(
+                content=system_prompt
+                )
+            messages = [sys_msg, HumanMessage(content=prompt)]
+            result = agent.run(messages)
+            if result:
+                parsed_result = output_parser_list.parse(result)
+                results.append(parsed_result)
+                parsed_results_flatten = []
+                if len(results) == 0:
+                    return {"competitor_outputs": []}
+                for i in results:
+                    post_contents = i.posts
+                    for j in post_contents:
+                        j = j.model_dump()
+                        j['source'] = "COMPETITORS"
+                        parsed_results_flatten.extend([j])
+                return {"competitor_outputs": parsed_results_flatten}
 
+            return {"error": f"No competitor data found for business: {business_name}"}
+    
     def business_agent(self, state: MessagesState) -> dict:
         # count = state["business_post_count"]
         holiday_count = len(state['holiday_outputs'])
@@ -592,7 +592,7 @@ class SocialMediaPostGenerator:
 
         # Define a specialized model for batch output
         class BusinessBatchOutput(BaseModel):
-            posts: List[dict] = Field(description="List of business posts with 'post', 'idea' and 'keywords' fields")
+            posts: List[dict] = Field(description="List of objects with three string fields 'post', 'idea' and 'keywords'")
             # ideas: List
             error_message: Optional[str] = Field(description="Optional error message if there was an issue",
                                                  default=None)
@@ -714,11 +714,11 @@ class SocialMediaPostGenerator:
         if user_prompts:
             user_prompts = default_user_prompt + user_prompts
 
-
         input_prompt = (f'\n\n Do not generate more than {count} posts.\n'
-                        f'EnterpriseId: {str(enterpriseId)}\n Page Size: {config["num_posts"]}\n'
-                        f'Channels: {channels}\n Time period: {"last " + str(config["duration"]) + " days"}')
-
+                f'EnterpriseId: {str(enterpriseId)}\n Page Size: {config["num_posts"]/len(channels)}\n'
+                f'Channels: {channels}\n Time period: {"last " + str(config["duration"]) + " days"}'
+                f'\n{user_prompts}')
+        
         # Create the prompt template with system content
         prompt = ChatPromptTemplate.from_messages([
             ("system", system_content),
@@ -766,7 +766,7 @@ class SocialMediaPostGenerator:
     def combine_posts(self, state: MessagesState) -> dict:
         all_posts = state["holiday_outputs"] + state["business_outputs"] + state["repurpose_outputs"] + state[
             'competitor_outputs'] + state['trending_outputs']
-        print("ALL POSTS : ", all_posts)  
+        # print("ALL POSTS : ", all_posts)  
 
         enriched = [{"content": post, 'source': post['source'], "image_url": self._get_image_for_post(post['keywords'])} for post in all_posts]
         return {"combined_posts": enriched}

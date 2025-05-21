@@ -30,6 +30,14 @@
       "business_category": "Finance,Mortgage Lenders",
       "time": "2025-05-12T18:50:40",
       "type": "Direct"
+    },
+    "Aspen" : {
+      "small_id": "26164",
+      "long_id": "840135232",
+      "business_name": "Aspen Dental Management",
+      "business_category": "Other,Other",
+      "time": "2025-05-12T18:50:12",
+      "type": "Cobranded"
     }
   }
   
