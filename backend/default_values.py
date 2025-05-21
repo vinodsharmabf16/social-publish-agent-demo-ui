@@ -384,6 +384,7 @@ def call_holiday_gen(payload):
 
 def search_pixabay_images(query, image_type='photo', per_page=5):
     # first try with pexel
+    images=[]
     try:
         url = f"https://api.pexels.com/v1/search?query={query}&per_page=5"
         payload = {}
@@ -396,9 +397,9 @@ def search_pixabay_images(query, image_type='photo', per_page=5):
         res = json.loads(response.text)
         images = [i['src']['large'] for i in res['photos']]
     except:
-        images = []
+        pass
 
-    if len(images) > 0:
+    if not images:
         try:
             base_url = 'https://pixabay.com/api/'
             params = {

@@ -867,10 +867,10 @@ input_payload= {
   "number_of_days": 10,
   "categories": [
     "BUSINESS_IDEAS_POST",
-    # "HOLIDAY_POST",
+    "HOLIDAY_POST",
     "REPURPOSED_POST",
     "COMP",
-    "TRENDING"
+    # "TRENDING"
   ],
   "prompt_config": {
     "BUSINESS_IDEAS_POST": [
