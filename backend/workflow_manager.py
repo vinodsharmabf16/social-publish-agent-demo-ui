@@ -1,3 +1,4 @@
+import concurrent.futures
 from typing import List, TypedDict, Annotated, Optional
 import operator, math
 from dotenv import load_dotenv
@@ -908,26 +909,72 @@ class SocialMediaPostGenerator:
 
         return {"repurpose_outputs": results, "repurpose_post_count": len(results)}
 
-    def combine_posts(self, state: MessagesState) -> dict:
-        all_posts = state["holiday_outputs"] + state["business_outputs"] + state["repurpose_outputs"] + state[
-            'competitor_outputs'] + state['trending_outputs']
-        # print("ALL POSTS : ", all_posts)
+    def _process_single_post(self, post: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Helper function to process a single post.
+        This will be executed in parallel by the threads.
+        """
+        try:
+            keywords_result = keyword_generator(
+                post['post'],
+                "" if post.get('source') != 'HOLIDAY' else 'holiday post'
+            )
+            keywords = keywords_result.get('keywords', '')
+
+            image_url = self._get_image_for_post(keywords)
+
+            return {
+                "content": post,
+                "source": post.get('source'),  # Use .get for safety if 'source' might be missing
+                "keywords": keywords,
+                "image_url": image_url
+            }
+        except Exception as e:
+            # Handle exceptions for a single post, e.g., log and return a specific error structure
+            print(f"Error processing post {post.get('id', 'N/A')}: {e}")  # Assuming post might have an 'id'
+            return {
+                "content": post,
+                "source": post.get('source'),
+                "keywords": "ERROR_GENERATING_KEYWORDS",
+                "image_url": "ERROR_FETCHING_IMAGE",
+                "error": str(e)
+            }
+
+    def combine_posts(self, state: Dict[str, List[Dict[str, Any]]]) -> dict:  # Using Dict for MessagesState
+        all_posts = (state.get("holiday_outputs", []) +
+                     state.get("business_outputs", []) +
+                     state.get("repurpose_outputs", []) +
+                     state.get("competitor_outputs", []) +
+                     state.get("trending_outputs", []))
+
         print(f"Finding Image Recommendations for {str(len(all_posts))} Generated Posts")
-        # enriched = [{"content": post,
-        #              'source': post['source'],
-        #              "image_url": self._get_image_for_post(keyword_generator(post['post'], "" if post['source'] != 'HOLIDAY' else '').get('keywords', ''))
-        #              } for post in all_posts]
+
         enriched = []
-        for post in all_posts:
-            temp = {"content": post,
-                    "source": post['source'],
-                    "keywords": keyword_generator(
-                        post['post'], "" if post['source'] != 'HOLIDAY' else 'holiday post'
-                    ).get('keywords', '')}
 
-            temp['image_url'] = self._get_image_for_post(temp["keywords"])
+        # Using ThreadPoolExecutor to parallelize the processing of each post
+        with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
+            # map will apply _process_single_post to each item in all_posts
+            # and returns results in the order of the input.
+            # It submits all tasks at once.
+            future_to_post_processor = {executor.submit(self._process_single_post, post): post for post in all_posts}
 
-            enriched.append(temp)
+            # If you want to process results as they complete (potentially out of order):
+            # for future in concurrent.futures.as_completed(future_to_post_processor):
+            #     try:
+            #         enriched_post = future.result()
+            #         enriched.append(enriched_post)
+            #     except Exception as exc:
+            #         original_post = future_to_post_processor[future]
+            #         print(f"Post generated an exception: {original_post.get('id', 'N/A')} - {exc}")
+            #         # Optionally append an error placeholder or skip
+            #         enriched.append({
+            #             "content": original_post, "source": original_post.get('source'),
+            #             "error": str(exc), "keywords": "", "image_url": ""
+            #         })
+
+            # If order matters and you want to collect all results (map is simpler for this):
+            results_iterator = executor.map(self._process_single_post, all_posts)
+            enriched = list(results_iterator)  # Convert iterator to list
 
         return {"combined_posts": enriched}
 
@@ -1008,7 +1055,7 @@ class SocialMediaPostGenerator:
 #             }
 #}
 input_payload= {
-  "total_post": 28,
+  "total_post": 7,
   "small_id": "1148914",
   "long_id": "169030216166956",
   "business_name": "Village Pet Care",
@@ -1025,10 +1072,10 @@ input_payload= {
   "number_of_days": 10,
   "categories": [
     "BUSINESS_IDEAS_POST",
-    # "HOLIDAY_POST",
-    # "REPURPOSED_POST",
+    "HOLIDAY_POST",
+    "REPURPOSED_POST",
     # "COMP",
-    "TRENDING"
+    # "TRENDING"
   ],
   "prompt_config": {
     "BUSINESS_IDEAS_POST": [
@@ -1122,9 +1169,9 @@ input_payload= {
 # 'make diwali post very bright. use colorful emojis', 'st. patricks post should alcohol focused. Connect it to some dental health concern.'
 
 
-social_agent = SocialMediaPostGenerator()
-
-posts = social_agent.generate(input_payload)
-
-for post in posts["combined_posts"]:
-    print(f"Source:{post['source']}\nContent:\n{post['content']}\nImage: {post['image_url']}\n{'-'*50}")
+# social_agent = SocialMediaPostGenerator()
+#
+# posts = social_agent.generate(input_payload)
+#
+# for post in posts["combined_posts"]:
+#     print(f"Source:{post['source']}\nContent:\n{post['content']}\nImage: {post['image_url']}\n{'-'*50}")
