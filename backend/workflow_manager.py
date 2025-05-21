@@ -781,7 +781,7 @@ class SocialMediaPostGenerator:
             temp = {}
             temp["content"] = post
             temp["source"] = post['source']
-            temp["keywords"] = keyword_generator(post['post'], "" if post['source'] != 'HOLIDAY' else '').get('keywords', '')
+            temp["keywords"] = keyword_generator(post['post'], "" if post['source'] != 'HOLIDAY' else 'holiday post').get('keywords', '')
             temp['image_url'] = self._get_image_for_post(temp["keywords"])
 
             enriched.append(temp)
@@ -865,7 +865,7 @@ class SocialMediaPostGenerator:
 #             }
 #}
 input_payload= {
-  "total_post": 7,
+  "total_post": 15,
   "small_id": "1148914",
   "long_id": "169030216166956",
   "business_name": "Village Pet Care",
