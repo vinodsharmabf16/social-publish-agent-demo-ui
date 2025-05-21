@@ -72,13 +72,13 @@ Follow these strict rules for keyword extraction:
 
 tools_prompt = '''
 You have access to the below tools:
-1. get_business_meta: Use this tool if there is no business context. You can get information about the business using this tool.
-2. get_upcoming_week_holidays: Use this tool to get the upcoming holidays given the number of days to look for in the future.
+1. tool_get_business_meta: Use this tool if there is no business context. You can get information about the business using this tool.
+2. tool_get_upcoming_week_holidays: Use this tool to get the upcoming holidays given the number of days to look for in the future.
 '''
 
 tools_repurpose_prompt = '''
 You have access to the below tools:
-1. get_useful_posts: Use this tool to get the useful old posts for a business which can be repurposed.
+1. tool_get_useful_posts: Use this tool to get the useful old posts for a business which can be repurposed.
 '''
 
 business_idea_system = '''
@@ -215,8 +215,8 @@ class GetPostOutputSchema(BaseModel):
         description="List of posts along with their channels or platforms"
     )
 
-@tool("get_useful_posts", args_schema=GetPostInputSchema)
-def get_useful_posts(channels, accountId, startDate, endDate=currentDate, pageSize=10):
+@tool("tool_get_useful_posts", args_schema=GetPostInputSchema)
+def tool_get_useful_posts(channels, accountId, startDate, endDate=currentDate, pageSize=10):
     """Gets the old useful posts which can be repurposed along with their channel"""
     posts = []
     llm = init_chat_model(
@@ -344,7 +344,7 @@ class PostType(Enum):
 
 
 @tool
-def get_business_meta(businessId):
+def tool_get_business_meta(businessId):
     """
     Takes in the businessId and returns information about the business like category, services, products, etc.
     :param businessId
@@ -455,7 +455,7 @@ def fetch_all_holidays():
     return json.loads(response.text)
 
 @tool
-def get_upcoming_week_holidays(days=7) -> List[Dict[str, str]]:
+def tool_get_upcoming_week_holidays(days=7) -> List[Dict[str, str]]:
     """
     Takes in the number of upcoming days and returns all the events and holidays in that timeframe starting from current day.
     :param days: This is the upcoming number of days that we need to check for any Holidays
@@ -576,7 +576,7 @@ def format_slots(slots: List[Dict[str, str]]) -> List[Dict[str, str]]:
 ### Tool to fetch competitors data########
 
 @tool
-def fetch_business_competitors_facebook(business_name: str,duration: int,engagement: int) -> Dict[str, Any]:
+def tool_fetch_business_competitors_facebook(business_name: str,duration: int,engagement: int) -> Dict[str, Any]:
     """Fetches competitors data for a given business name and channel 'Facebook'
      duration - from current date and publishedDate should be within the given duration.
     engagement - should be greater than the given engagement.
@@ -596,8 +596,9 @@ def fetch_business_competitors_facebook(business_name: str,duration: int,engagem
 ]
             return f"Below is the competitors data {results}"
     return "No Data Found"
+
 @tool
-def fetch_business_competitors_instagram(business_name: str,duration: int,engagement: int) -> Dict[str, Any]:
+def tool_fetch_business_competitors_instagram(business_name: str,duration: int,engagement: int) -> Dict[str, Any]:
     """Fetches competitors data for a given business name  and channel 'Instagram',
       duration - from current date and publishedDate should be within the given duration.
     engagement - should be greater than the given engagement.
@@ -620,7 +621,7 @@ def fetch_business_competitors_instagram(business_name: str,duration: int,engage
     return "No Data Found"
 
 @tool
-def fetch_business_competitors_twitter(business_name: str,duration: int,engagement: int) -> Dict[str, Any]:
+def tool_fetch_business_competitors_twitter(business_name: str,duration: int,engagement: int) -> Dict[str, Any]:
     """Fetches competitors data for a given business name  and platform 'Twitter'
     duration - from current date and publishedDate should be within the given duration.
     engagement - should be greater than the given engagement.
@@ -642,7 +643,7 @@ def fetch_business_competitors_twitter(business_name: str,duration: int,engageme
     return "No Data Found"
 
 # @tool
-# def fetch_business_trends(business_category: str) -> Dict[str, Any]:
+# def tool_fetch_business_trends(business_category: str) -> Dict[str, Any]:
 #     "Fetches business trends data for a given business category and other filters if applicable in the given instruction"
 #     with open("business_trends_mock.json", "r") as f:
 #         trends_data = json.load(f)
@@ -653,17 +654,17 @@ def fetch_business_competitors_twitter(business_name: str,duration: int,engageme
 
 TOOLS_REGISTRY = {
     "Get Top performing posts - facebook":{
-        "function":fetch_business_competitors_facebook,
+        "function":tool_fetch_business_competitors_facebook,
         "description":"Fetches top performing posts for a given business name and channel 'Facebook'."
     },
     "Get Top performing posts - instagram":{
-        "function":fetch_business_competitors_instagram,
+        "function":tool_fetch_business_competitors_instagram,
         "description":"Fetches top performing posts for a given business name and channel 'Instagram'."
     }
 }
 
 @tool
-def fetch_business_trends(
+def tool_fetch_business_trends(
         business_name: str,
         industry: str,
         sub_industry: str,

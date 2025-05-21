@@ -107,7 +107,7 @@ class SocialMediaPostGenerator:
         self.llm_repurpose = ChatOpenAI(model="gpt-4o")
         self.llm_competitor = ChatOpenAI(model="gpt-4o")
         self.llm_trending = ChatOpenAI(model="gpt-4o")
-        self.tools = [get_upcoming_week_holidays, get_business_meta]
+        self.tools = [tool_get_upcoming_week_holidays, tool_get_business_meta]
 
         self.graph = self._build_graph()
         self._build_graph_image()
@@ -416,7 +416,7 @@ class SocialMediaPostGenerator:
         businessId = state['small_id']
         num_days = total
         last_message = state["last_call"]
-        tools = [get_upcoming_week_holidays, get_business_meta]
+        tools = [tool_get_upcoming_week_holidays, tool_get_business_meta]
 
         if PostType.HOLIDAY_POST.name in categories and total > 0:
             pass
@@ -426,7 +426,7 @@ class SocialMediaPostGenerator:
             #                       event='',
             #                       error_message='Validation Failure while generating Holiday Posts').model_dump()
             # error['source'] = 'HOLIDAY_POST'
-            category, business_info = get_business_meta(businessId)
+            category, business_info = tool_get_business_meta(businessId)
 
             return {"holiday_outputs": [],
                     "holiday_post_count": 0,
@@ -511,8 +511,8 @@ class SocialMediaPostGenerator:
     #     #     verbose=True
     #     # )
     #     # BE APIs
-    #     holidays = get_upcoming_week_holidays(state['number_of_days'])
-    #     category, business_info = get_business_meta(state['small_id'])
+    #     holidays = tool_get_upcoming_week_holidays(state['number_of_days'])
+    #     category, business_info = tool_get_business_meta(state['small_id'])
     #
     #     if PostType.HOLIDAY_POST.name in categories and holidays and total > 0:
     #         pass
@@ -579,7 +579,7 @@ class SocialMediaPostGenerator:
     #         return {"trending_outputs": []}
 
     #     results = []
-    #     tools = [fetch_business_trends]
+    #     tools = [tool_fetch_business_trends]
     #     agent = initialize_agent(
     #         tools=tools,
     #         llm=self.llm_trending,
@@ -589,7 +589,7 @@ class SocialMediaPostGenerator:
     #     user_prompt = state['prompt_config'].get('TRENDING')
     #     business_category = state['business_category']
     #     prompt = f"""Create {count} social media posts using content from the latest trends for the given business category.
-    #     Check ``{business_category}`` data using the `fetch_business_trends` tool. Use the exact name of the category while searching.
+    #     Check ``{business_category}`` data using the `tool_fetch_business_trends` tool. Use the exact name of the category while searching.
     #     Once the data is retrieved:
     #     1. Use recent trends (preferably last_24_hours or last_48_hours, but include relevant last_7_days too).
     #     2. Generate posts tailored to the **business context**, using the trends data as the core message.
@@ -601,7 +601,7 @@ class SocialMediaPostGenerator:
     #     if user_prompt:
     #         prompt = prompt + f"Below are the instructions given by the user as constrainsts: 'User instructions: {user_prompt}'"
     #     sys_msg = SystemMessage(
-    #         content="You are a helpful assistant for generating posts according to trends. First, use the tool `fetch_business_trends` to get the trends data.")
+    #         content="You are a helpful assistant for generating posts according to trends. First, use the tool `tool_fetch_business_trends` to get the trends data.")
     #     messages = [sys_msg, HumanMessage(content=prompt)]
     #     result = agent.run(messages)
     #     if result:
@@ -636,7 +636,7 @@ class SocialMediaPostGenerator:
         if count == 0:
             return {"trending_outputs": []}
         results = []
-        tools = [fetch_business_trends]
+        tools = [tool_fetch_business_trends]
         agent = initialize_agent(
             tools=tools,
             llm=self.llm_trending,
@@ -646,7 +646,7 @@ class SocialMediaPostGenerator:
         user_prompt = state['prompt_config'].get('TRENDING')
         business_category = state['business_category']
         prompt = f"""Create {count} social media posts using content from the latest trends for the given business name {business_name}.
-        Check ``{business_name} {industry} {sub_industry} {recency}`` data using the `fetch_business_trends` tool. Use the exact name of the business_name, industry, sub-industry while searching.
+        Check ``{business_name} {industry} {sub_industry} {recency}`` data using the `tool_fetch_business_trends` tool. Use the exact name of the business_name, industry, sub-industry while searching.
         Once the data is retrieved:
         1. Use the "selected_topics" key which contains the key called "topic", based on which you need to create a post
         2. Generate posts tailored to the **business context**, using the trends data as the core message.
@@ -659,7 +659,7 @@ class SocialMediaPostGenerator:
         if user_prompt:
             prompt = prompt + f"Below are the instructions given by the user as constrainsts: 'User instructions: {user_prompt}'"
         sys_msg = SystemMessage(
-            content="You are a helpful assistant for generating posts according to trending topics. First, use the tool `fetch_business_trends` to get the trending topics data.")
+            content="You are a helpful assistant for generating posts according to trending topics. First, use the tool `tool_fetch_business_trends` to get the trending topics data.")
         messages = [sys_msg, HumanMessage(content=prompt)]
         result = agent.run(messages)
         if result:
@@ -835,7 +835,7 @@ class SocialMediaPostGenerator:
         count = state["repurpose_post_count"]
         enterpriseId = state['small_id']
         tool_config = state['tools']
-        tools = [get_useful_posts]
+        tools = [tool_get_useful_posts]
         channels = []
         config = {}
 
