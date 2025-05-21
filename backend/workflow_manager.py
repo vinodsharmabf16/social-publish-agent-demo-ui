@@ -188,71 +188,212 @@ class SocialMediaPostGenerator:
             print("You can often visualize the graph execution in LangSmith if you have it configured.")
 
     # ---- Node Functions ----
-    def allocate_source_count(self, state: MessagesState) -> MessagesState:
-        total = state["total_post"]
+    # def allocate_source_count(self, state: MessagesState) -> MessagesState:
+    #     total = state["total_post"]
+    #     categories = state["categories"]
+    #     holiday_count = state['holiday_post_count']
+    #
+    #     repurpose_post, business_post, competitor_post, trending_post = 0, 0, 0, 0
+    #     remaining = total - holiday_count
+    #
+    #     if PostType.REPURPOSED_POST.name in categories:
+    #         repurpose_post = 1
+    #
+    #     if PostType.BUSINESS_IDEAS_POST.name in categories:
+    #         business_post = 1
+    #
+    #     if PostType.COMP.name in categories:
+    #         competitor_post = 1
+    #
+    #     if PostType.TRENDING.name in categories:
+    #         trending_post = 1
+    #
+    #     total_sources = repurpose_post + business_post + competitor_post + trending_post
+    #
+    #     if total_sources > remaining:
+    #         if total_sources - remaining == 1:
+    #             business_post = 0
+    #         elif total_sources - remaining == 2:
+    #             business_post = 0
+    #             trending_post = 0
+    #         elif total_sources - remaining == 3:
+    #             business_post = 0
+    #             trending_post = 0
+    #             competitor_post = 0
+    #         else:
+    #             business_post = 0
+    #             trending_post = 0
+    #             competitor_post = 0
+    #             repurpose_post = 0
+    #     # total_sources = repurpose_post + business_post + competitor_post + trending_post
+    #         # business_post += remaining - total_sources
+    #     # else:
+    #
+    #     if total_sources > 0:
+    #         repurpose_post *= math.ceil(remaining / total_sources)
+    #         remaining -= repurpose_post
+    #
+    #     if total_sources > 1:
+    #         competitor_post *= math.ceil(remaining / (total_sources - 1))
+    #         remaining -= competitor_post
+    #
+    #     if total_sources > 2:
+    #         trending_post *= math.ceil(remaining / (total_sources - 2))
+    #         remaining -= trending_post
+    #
+    #     # business_post *= math.floor(remaining/total_sources)
+    #
+    #     business_post = remaining
+    #
+    #     updates = {
+    #         "business_post_count": business_post,
+    #         "repurpose_post_count": repurpose_post,
+    #         "competitor_post_count": competitor_post,
+    #         "trending_post_count": trending_post,
+    #         "trending_outputs": []
+    #     }
+    #
+    #     return updates
+
+    def allocate_source_count(self, state):
+        total_post = state["total_post"]
         categories = state["categories"]
         holiday_count = state['holiday_post_count']
 
-        repurpose_post, business_post, competitor_post, trending_post = 0, 0, 0, 0
-        remaining = total - holiday_count
+        # Initialize flags based on categories present
+        repurpose_active = 1 if PostType.REPURPOSED_POST.name in categories else 0
+        business_active = 1 if PostType.BUSINESS_IDEAS_POST.name in categories else 0
+        competitor_active = 1 if PostType.COMP.name in categories else 0
+        trending_active = 1 if PostType.TRENDING.name in categories else 0
 
-        if PostType.REPURPOSED_POST.name in categories:
-            repurpose_post = 1
+        posts_available_for_sources = total_post - holiday_count
+        if posts_available_for_sources < 0:
+            posts_available_for_sources = 0
 
-        if PostType.BUSINESS_IDEAS_POST.name in categories:
-            business_post = 1
+        # --- Reduction Logic (from original code's behavior) ---
+        # Check how many categories are notionally active if each gets at least 1 post.
+        # This part determines which flags (repurpose_active, etc.) might be turned off.
+        # The original code initializes counts to 1 if active, then reduces.
+        # We apply this to our flags.
 
-        if PostType.COMP.name in categories:
-            competitor_post = 1
+        # Simulate initial "1 post per active category" to check against remaining posts
+        _temp_repurpose = 1 if repurpose_active else 0
+        _temp_business = 1 if business_active else 0
+        _temp_competitor = 1 if competitor_active else 0
+        _temp_trending = 1 if trending_active else 0
 
-        if PostType.TRENDING.name in categories:
-            trending_post = 1
+        current_total_active_sources_for_reduction = _temp_repurpose + _temp_business + _temp_competitor + _temp_trending
 
-        total_sources = repurpose_post + business_post + competitor_post + trending_post
+        if current_total_active_sources_for_reduction > posts_available_for_sources:
+            diff = current_total_active_sources_for_reduction - posts_available_for_sources
 
-        if total_sources > remaining:
-            if total_sources - remaining == 1:
-                business_post = 0
-            elif total_sources - remaining == 2:
-                business_post = 0
-                trending_post = 0
-            elif total_sources - remaining == 3:
-                business_post = 0
-                trending_post = 0
-                competitor_post = 0
-            else:
-                business_post = 0
-                trending_post = 0
-                competitor_post = 0
-                repurpose_post = 0
-        # total_sources = repurpose_post + business_post + competitor_post + trending_post
-            # business_post += remaining - total_sources
-        # else:
+            # This reduction priority (Business -> Trending -> Competitor -> Repurpose)
+            # is derived from the original code's conditional `business_post = 0`, etc.
+            if diff == 1:
+                if business_active: business_active = 0
+                # If business_active was already 0, the original code did not specify a fallback.
+                # We will stick to this direct interpretation. If a more robust fallback is needed
+                # (e.g., turn off trending if business is already off), that's a further change.
+            elif diff == 2:
+                if business_active: business_active = 0
+                if trending_active: trending_active = 0
+            elif diff == 3:
+                if business_active: business_active = 0
+                if trending_active: trending_active = 0
+                if competitor_active: competitor_active = 0
+            else:  # diff >= 4 (implies all were active and need to be turned off, or more than 4 sources)
+                if business_active: business_active = 0
+                if trending_active: trending_active = 0
+                if competitor_active: competitor_active = 0
+                if repurpose_active: repurpose_active = 0
 
-        if total_sources > 0:
-            repurpose_post *= math.ceil(remaining / total_sources)
-            remaining -= repurpose_post
+        # --- End of Reduction Logic ---
 
-        if total_sources > 1:
-            competitor_post *= math.ceil(remaining / (total_sources - 1))
-            remaining -= competitor_post
+        # Initialize post counts
+        repurpose_post_count, business_post_count, competitor_post_count, trending_post_count = 0, 0, 0, 0
 
-        if total_sources > 2:
-            trending_post *= math.ceil(remaining / (total_sources - 2))
-            remaining -= trending_post
+        current_remaining_posts = posts_available_for_sources
 
-        # business_post *= math.floor(remaining/total_sources)
+        # This is the `total_sources` from the original commented logic.
+        # It's the number of categories that are *still active* after reduction.
+        effective_total_active_sources = repurpose_active + competitor_active + trending_active + business_active
 
-        business_post = remaining
+        if effective_total_active_sources > 0 and current_remaining_posts > 0:
+            # --- Repurpose Post Allocation ---
+            if repurpose_active:
+                # Denominator for repurpose is all currently effective_total_active_sources
+                denominator = effective_total_active_sources
+                # This check for denominator > 0 is technically covered by `effective_total_active_sources > 0`
+                # and `repurpose_active` being true, implying denominator >= 1.
+                share = round(current_remaining_posts / denominator)
+                count = min(max(0, int(share)), current_remaining_posts)  # Ensure non-negative and within available
+                repurpose_post_count = count
+                current_remaining_posts -= count
+
+            # --- Competitor Post Allocation ---
+            if competitor_active:
+                # Denominator for competitor is effective_total_active_sources minus 1 if repurpose was active (and thus "took a slot")
+                denominator = effective_total_active_sources - (1 if repurpose_active else 0)
+                if denominator > 0:
+                    share = round(current_remaining_posts / denominator)
+                    count = min(max(0, int(share)), current_remaining_posts)
+                    competitor_post_count = count
+                    current_remaining_posts -= count
+                elif current_remaining_posts > 0:  # Competitor active, but no denominator "slots" left (e.g., only C was active from start, or RP was active and C is next)
+                    competitor_post_count = current_remaining_posts  # Gets all remaining if it's effectively the last one for sharing
+                    current_remaining_posts = 0
+
+            # --- Trending Post Allocation ---
+            if trending_active:
+                # Denominator for trending considers if repurpose and competitor were active
+                denominator = effective_total_active_sources - (1 if repurpose_active else 0) - (
+                    1 if competitor_active else 0)
+                if denominator > 0:
+                    share = round(current_remaining_posts / denominator)
+                    count = min(max(0, int(share)), current_remaining_posts)
+                    trending_post_count = count
+                    current_remaining_posts -= count
+                elif current_remaining_posts > 0:
+                    trending_post_count = current_remaining_posts
+                    current_remaining_posts = 0
+
+        # --- Business Post Allocation (gets whatever is left, if active) ---
+        if business_active:
+            business_post_count = max(0, current_remaining_posts)  # Ensure non-negative
+            current_remaining_posts -= business_post_count  # Should make current_remaining_posts zero
+
+        # --- Handle Remainder (if business was not active and rounding left posts) ---
+        # This distributes any posts left due to rounding if Business category was not active to absorb them.
+        if current_remaining_posts > 0:
+            # Create a list of R, C, T categories that are active, in order of priority
+            eligible_for_remainder = []
+            if repurpose_active: eligible_for_remainder.append("R")
+            if competitor_active: eligible_for_remainder.append("C")
+            if trending_active: eligible_for_remainder.append("T")
+
+            idx = 0
+            temp_rem = current_remaining_posts
+            while temp_rem > 0 and len(eligible_for_remainder) > 0:
+                category_to_increment = eligible_for_remainder[idx % len(eligible_for_remainder)]
+                if category_to_increment == "R":
+                    repurpose_post_count += 1
+                elif category_to_increment == "C":
+                    competitor_post_count += 1
+                elif category_to_increment == "T":
+                    trending_post_count += 1
+                temp_rem -= 1
+                idx += 1
+            current_remaining_posts = temp_rem  # Should be 0 if distributed
 
         updates = {
-            "business_post_count": business_post,
-            "repurpose_post_count": repurpose_post,
-            "competitor_post_count": competitor_post,
-            "trending_post_count": trending_post,
-            "trending_outputs": []
+            "business_post_count": business_post_count,
+            "repurpose_post_count": repurpose_post_count,
+            "competitor_post_count": competitor_post_count,
+            "trending_post_count": trending_post_count,
         }
+        print(updates)
         return updates
+
     # def should_call_tool(self, state: MessagesState) -> Literal["tools_node", "allocate_source_count"]:
     #     """
     #     Determines the next step based on the last message from the content_creator_agent.
@@ -778,10 +919,12 @@ class SocialMediaPostGenerator:
         #              } for post in all_posts]
         enriched = []
         for post in all_posts:
-            temp = {}
-            temp["content"] = post
-            temp["source"] = post['source']
-            temp["keywords"] = keyword_generator(post['post'], "" if post['source'] != 'HOLIDAY' else 'holiday post').get('keywords', '')
+            temp = {"content": post,
+                    "source": post['source'],
+                    "keywords": keyword_generator(
+                        post['post'], "" if post['source'] != 'HOLIDAY' else 'holiday post'
+                    ).get('keywords', '')}
+
             temp['image_url'] = self._get_image_for_post(temp["keywords"])
 
             enriched.append(temp)
@@ -865,7 +1008,7 @@ class SocialMediaPostGenerator:
 #             }
 #}
 input_payload= {
-  "total_post": 15,
+  "total_post": 28,
   "small_id": "1148914",
   "long_id": "169030216166956",
   "business_name": "Village Pet Care",
@@ -882,10 +1025,10 @@ input_payload= {
   "number_of_days": 10,
   "categories": [
     "BUSINESS_IDEAS_POST",
-    "HOLIDAY_POST",
-    "REPURPOSED_POST",
-    "COMP",
-    # "TRENDING"
+    # "HOLIDAY_POST",
+    # "REPURPOSED_POST",
+    # "COMP",
+    "TRENDING"
   ],
   "prompt_config": {
     "BUSINESS_IDEAS_POST": [
@@ -978,10 +1121,10 @@ input_payload= {
 }
 # 'make diwali post very bright. use colorful emojis', 'st. patricks post should alcohol focused. Connect it to some dental health concern.'
 
-#
-# social_agent = SocialMediaPostGenerator()
-#
-# posts = social_agent.generate(input_payload)
-#
-# for post in posts["combined_posts"]:
-#     print(f"Source:{post['source']}\nContent:\n{post['content']}\nImage: {post['image_url']}\n{'-'*50}")
+
+social_agent = SocialMediaPostGenerator()
+
+posts = social_agent.generate(input_payload)
+
+for post in posts["combined_posts"]:
+    print(f"Source:{post['source']}\nContent:\n{post['content']}\nImage: {post['image_url']}\n{'-'*50}")
