@@ -1,0 +1,285 @@
+Trending Topics Generator Documentation
+Overview
+The Trending Topics Generator is a full-stack application that helps businesses generate trending topics for their social media content. It consists of a Streamlit web interface, a FastAPI backend, and uses Google's Gemini AI model for topic generation.
+Project Structure
+
+Trending_topic/
+├── app.py             # Streamlit web interface
+├── api_server.py      # FastAPI backend server
+├── gemini.py          # Gemini AI integration
+├── plan.txt          # Project planning document
+├── .env              # Environment variables
+└── requirements.txt  # Python package dependencies
+
+Components
+1. Streamlit Web Interface (`app.py`)
+A user-friendly web interface built with Streamlit that allows users to:
+
+Input business details (name, industry, sub-industry, location)
+Specify date/time for trend generation
+View generated trending topics in a visually appealing card layout
+Key Features:
+Responsive grid layout for topic display
+Custom CSS styling for better user experience
+Input validation and error handling
+Real-time topic generation
+2. FastAPI Backend (`api_server.py`)
+A RESTful API server that provides endpoints for generating trending topics.
+Endpoints:
+`POST /generate`: Generate trending topics
+`GET /`: API information and documentation
+Data Models:
+`GenerateRequest`: Input parameters for topic generation
+`TrendingTopic`: Structure for individual trending topics
+`TrendingTopicsResponse`: API response format
+3. Gemini AI Integration (`gemini.py`)
+Core module that handles the interaction with Google's Gemini AI model.
+Key Functions:
+`generate(business_name, industry, sub_industry=None, location=None, date_time=None)`: Main function for generating trending topics
+Output Format:
+{
+  "trending_topics": [
+    {
+      "trend_name": "string",
+      "trend_category": "string",
+      "date_time": "YYYY-MM-DDTHH:MM:SS",
+      "post_ideas": ["string"],
+      "source_type": "string"
+    }
+  ]
+}
+Setup and Installation
+Prerequisites
+Python 3.x
+Google Gemini API key
+Required Python packages:
+
+streamlit
+fastapi
+uvicorn
+google-genai
+python-dotenv
+Environment Setup
+Create a `.env` file with your Google Gemini API key:
+
+API_KEY=your_api_key_here
+Running the Application
+Start the Streamlit interface:
+
+streamlit run app.py
+
+Start the API server:
+
+python api_server.py
+Usage
+Web Interface
+Open the Streamlit interface in your browser
+Enter required business information:
+Business Name (required)
+Industry (required)
+Sub-Industry (optional)
+Location (optional)
+Choose whether to use current time or specify a custom date/time
+Click "Generate Trending Topics"
+API Usage
+Send a POST request to `/generate` with the following JSON body:
+
+{
+  "business_name": "string",
+  "industry": "string",
+  "sub_industry": "string (optional)",
+  "location": "string (optional)",
+  "date_time": "YYYY-MM-DD HH:MM:SS (optional)"
+}
+Features and Capabilities
+Topic Generation
+Generates 10 trending topics per request
+Topics are sorted by business domain, sub-industry, and industry
+Includes post ideas for each topic
+Categorizes trends (Industry, Sub-Industry, Seasonal, Festival, Event, Meme, General Social Media)
+Sources trends from various platforms (Twitter, Google Trends, News, Social Media)
+Content Guidelines
+Brand-safe and visual-content friendly
+No negative, political, or NSFW content
+Topics relevant for up to 1 month in the future
+Each trend includes 2-3 post ideas
+Error Handling
+Input validation for required fields
+JSON parsing error handling
+API error responses with appropriate status codes
+Graceful fallback for invalid responses
+Security
+API key management through environment variables
+Input sanitization
+Error message sanitization
+Future Improvements
+Add authentication for API endpoints
+Implement rate limiting
+Add caching for frequently requested topics
+Expand trend sources and categories
+Add analytics and tracking features
+comprehensive documentation for this codebase. Let me first explore the codebase structure to ensure I capture all the important components.
+
+
+Ran tool
+Let me check the contents of the other key files to provide complete documentation.
+
+
+Read file: gemini.py
+
+Read file: api_server.py
+Based on the codebase exploration, I'll provide comprehensive documentation for this Trending Topics Generator project:
+
+# Trending Topics Generator Documentation
+
+## Overview
+The Trending Topics Generator is a full-stack application that helps businesses generate trending topics for their social media content. It consists of a Streamlit web interface, a FastAPI backend, and uses Google's Gemini AI model for topic generation.
+
+## Project Structure
+```
+Trending_topic/
+├── app.py              # Streamlit web interface
+├── api_server.py       # FastAPI backend server
+├── gemini.py           # Gemini AI integration
+└── plan.txt           # Project planning document
+```
+
+## Components
+
+### 1. Streamlit Web Interface (`app.py`)
+A user-friendly web interface built with Streamlit that allows users to:
+- Input business details (name, industry, sub-industry, location)
+- Specify date/time for trend generation
+- View generated trending topics in a visually appealing card layout
+
+#### Key Features:
+- Responsive grid layout for topic display
+- Custom CSS styling for better user experience
+- Input validation and error handling
+- Real-time topic generation
+
+### 2. FastAPI Backend (`api_server.py`)
+A RESTful API server that provides endpoints for generating trending topics.
+
+#### Endpoints:
+- `POST /generate`: Generate trending topics
+- `GET /`: API information and documentation
+
+#### Data Models:
+- `GenerateRequest`: Input parameters for topic generation
+- `TrendingTopic`: Structure for individual trending topics
+- `TrendingTopicsResponse`: API response format
+
+### 3. Gemini AI Integration (`gemini.py`)
+Core module that handles the interaction with Google's Gemini AI model.
+
+#### Key Functions:
+- `generate(business_name, industry, sub_industry=None, location=None, date_time=None)`: Main function for generating trending topics
+
+#### Output Format:
+```json
+{
+  "trending_topics": [
+    {
+      "trend_name": "string",
+      "trend_category": "string",
+      "date_time": "YYYY-MM-DDTHH:MM:SS",
+      "post_ideas": ["string"],
+      "source_type": "string"
+    }
+  ]
+}
+```
+
+## Setup and Installation
+
+### Prerequisites
+- Python 3.x
+- Google Gemini API key
+- Required Python packages:
+  ```
+  streamlit
+  fastapi
+  uvicorn
+  google-genai
+  python-dotenv
+  ```
+
+### Environment Setup
+1. Create a `.env` file with your Google Gemini API key:
+   ```
+   API_KEY=your_api_key_here
+   ```
+
+### Running the Application
+
+1. Start the Streamlit interface:
+   ```bash
+   streamlit run app.py
+   ```
+
+2. Start the API server:
+   ```bash
+   python api_server.py
+   ```
+
+## Usage
+
+### Web Interface
+1. Open the Streamlit interface in your browser
+2. Enter required business information:
+   - Business Name (required)
+   - Industry (required)
+   - Sub-Industry (optional)
+   - Location (optional)
+3. Choose whether to use current time or specify a custom date/time
+4. Click "Generate Trending Topics"
+
+### API Usage
+Send a POST request to `/generate` with the following JSON body:
+```json
+{
+  "business_name": "string",
+  "industry": "string",
+  "sub_industry": "string (optional)",
+  "location": "string (optional)",
+  "date_time": "YYYY-MM-DD HH:MM:SS (optional)"
+}
+```
+
+## Features and Capabilities
+
+### Topic Generation
+- Generates 10 trending topics per request
+- Topics are sorted by business domain, sub-industry, and industry
+- Includes post ideas for each topic
+- Categorizes trends (Industry, Sub-Industry, Seasonal, Festival, Event, Meme, General Social Media)
+- Sources trends from various platforms (Twitter, Google Trends, News, Social Media)
+
+### Content Guidelines
+- Brand-safe and visual-content friendly
+- No negative, political, or NSFW content
+- Topics relevant for up to 1 month in the future
+- Each trend includes 2-3 post ideas
+
+## Error Handling
+- Input validation for required fields
+- JSON parsing error handling
+- API error responses with appropriate status codes
+- Graceful fallback for invalid responses
+
+## Security
+- API key management through environment variables
+- Input sanitization
+- Error message sanitization
+
+## Future Improvements
+- Add authentication for API endpoints
+- Implement rate limiting
+- Add caching for frequently requested topics
+- Expand trend sources and categories
+- Add analytics and tracking features
+
+This documentation provides a comprehensive overview of the Trending Topics Generator project. For specific implementation details or customization, refer to the individual component documentation and code comments.
+
+
