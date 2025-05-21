@@ -677,7 +677,7 @@ def publish_from_draft():
         try:
             logger.info(f"Publishing with payload: {json.dumps(payload, indent=2)}")
             response = requests.post("http://localhost:8000/generate-posts", json=payload,
-                                     timeout=200)
+                                     timeout=350)
             if response.status_code == 200:
                 with open(f"response/{ACCOUNT_ID}.json", "w") as f:
                     json.dump(response.json(), f, indent=4)
