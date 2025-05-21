@@ -275,9 +275,13 @@ class SocialMediaPostGenerator:
             #                       event='',
             #                       error_message='Validation Failure while generating Holiday Posts').model_dump()
             # error['source'] = 'HOLIDAY_POST'
+            category, business_info = get_business_meta(businessId)
 
-            return {"holiday_outputs": [], # error
-                    "holiday_post_count": 0}
+            return {"holiday_outputs": [],
+                    "holiday_post_count": 0,
+                    "business_category": category,
+                    "business_info": json.dumps(business_info)
+                    }
 
         results = []
         parser = JsonOutputParser(pydantic_object=HolidayBatch)
@@ -543,8 +547,6 @@ class SocialMediaPostGenerator:
             )
             user_prompt = state['prompt_config'].get('competitor')
             business_name = state['business_name']
-
-
 
             system_prompt = competitor_system_prompt.format(count=count,business_name=business_name, tools_list=descriptions, config=state['tools']['COMP'], format_instructions_list=format_instructions_list)
             prompt = f"""create {count} post(s) based on competitor posts and instructions provided.
@@ -865,7 +867,7 @@ input_payload= {
   "number_of_days": 10,
   "categories": [
     "BUSINESS_IDEAS_POST",
-    "HOLIDAY_POST",
+    # "HOLIDAY_POST",
     "REPURPOSED_POST",
     "COMP",
     "TRENDING"
@@ -961,10 +963,10 @@ input_payload= {
 }
 # 'make diwali post very bright. use colorful emojis', 'st. patricks post should alcohol focused. Connect it to some dental health concern.'
 
-
+#
 # social_agent = SocialMediaPostGenerator()
-
+#
 # posts = social_agent.generate(input_payload)
-
+#
 # for post in posts["combined_posts"]:
 #     print(f"Source:{post['source']}\nContent:\n{post['content']}\nImage: {post['image_url']}\n{'-'*50}")

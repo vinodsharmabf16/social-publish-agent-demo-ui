@@ -22,14 +22,11 @@ from pydantic import BaseModel, Field
 from typing import Annotated, Literal, List, Dict, Any, Optional
 from datetime import datetime, timedelta, timezone
 from typing import Dict, List
-
-
 from datetime import datetime, date
 
 
-
-
 PIXABAY_API_KEY = "50243041-2741613e433c3c2a3b1783510"
+PEXEL_API_KEY = "LuqMIWVW5Dnb9dvw9xtlgCbsIfX3XJrewpwOXrTi5smPPbxBsiXTRe4t"
 
 # businessId='1160473'
 
@@ -386,21 +383,38 @@ def call_holiday_gen(payload):
 
 
 def search_pixabay_images(query, image_type='photo', per_page=5):
+    # first try with pexel
     try:
-        base_url = 'https://pixabay.com/api/'
-        params = {
-            'key': PIXABAY_API_KEY, # temp key
-            'q': query,
-            'image_type': image_type,
-            'per_page': per_page
+        url = f"https://api.pexels.com/v1/search?query={query}&per_page=5"
+        payload = {}
+        headers = {
+        'Authorization': PEXEL_API_KEY
         }
-        response = requests.get(base_url, params=params)
-        response.raise_for_status()  # Raise an exception for HTTP errors
-        res = response.json()
-        images = [i['largeImageURL'] for i in res['hits']]
-        return images
+
+        response = requests.request("GET", url, headers=headers, data=payload)
+
+        res = json.loads(response.text)
+        images = [i['src']['large'] for i in res['photos']]
     except:
-        return []
+        images = []
+
+    if len(images) > 0:
+        try:
+            base_url = 'https://pixabay.com/api/'
+            params = {
+                'key': PIXABAY_API_KEY, # temp key
+                'q': query,
+                'image_type': image_type,
+                'per_page': per_page
+            }
+            response = requests.get(base_url, params=params)
+            response.raise_for_status()  # Raise an exception for HTTP errors
+            res = response.json()
+            images = [i['largeImageURL'] for i in res['hits']]
+            return images
+        except:
+            return []
+    return images
 
 
 def fetch_business_competitors_trends(trends=False):
