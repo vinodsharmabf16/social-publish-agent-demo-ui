@@ -1,0 +1,43 @@
+{
+    "Village_Pet_Care": {
+      "small_id": "1148914",
+      "long_id": "169030216166956",
+      "business_name": "Village Pet Care",
+      "business_category": "Other,Other,Other",
+      "time": "2025-03-25T22:30:21",
+      "type": "Direct"
+    },
+    "American_Senior_Communities": {
+      "small_id": "1230007",
+      "long_id": "170181073692359",
+      "business_name": "American Senior Communities",
+      "business_category": "Other,Other",
+      "time": "2025-05-12T18:50:12",
+      "type": "Cobranded"
+    },
+    "Fidelity_Bank": {
+      "small_id": "1264350",
+      "long_id": "170561253308630",
+      "business_name": "Fidelity Bank",
+      "business_category": "Other,Other,Other",
+      "time": "2025-01-15T20:05:47",
+      "type": "Direct"
+    },
+    "JYSK": {
+      "small_id": "261968",
+      "long_id": "149546071353527",
+      "business_name": "JYSK",
+      "business_category": "Finance,Mortgage Lenders",
+      "time": "2025-05-12T18:50:40",
+      "type": "Direct"
+    },
+    "Aspen" : {
+      "small_id": "26164",
+      "long_id": "840135232",
+      "business_name": "Aspen Dental Management",
+      "business_category": "Other,Other",
+      "time": "2025-05-12T18:50:12",
+      "type": "Cobranded"
+    }
+  }
+  
