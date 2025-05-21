@@ -60,7 +60,7 @@ class PostList(BaseModel):
 
 class HolidayOutput(BaseModel):
     post: str = Field(description="The post generated")
-    keywords: str = Field(description="Keywords for the generated post")
+    # keywords: str = Field(description="Image caption to search on pexel/pixabay which can be used in the post")
     event: str = Field(description="The name of the holiday or event on which the post is generated")
     error_message: Optional[str] = Field(description="Optional error message if there was an issue", default=None)
 
@@ -72,13 +72,20 @@ class HolidayBatch(BaseModel):
 
 class BusinessOutput(BaseModel):
     post: str = Field(description="The business post generated")
-    keywords: str = Field(description="Keywords for the business post")
+    # keywords: str = Field(description="Image caption to search on pexel/pixabay which can be used in the post")
     idea: str = Field(description="Idea on which the post is generated")
     error_message: Optional[str] = Field(description="Optional error message if there was an issue", default=None)
 
+# Define a specialized model for batch output
+class BusinessBatchOutput(BaseModel):
+    posts: List[BusinessOutput] = Field(description="List of objects with three string fields 'post', 'idea' and 'keywords'")
+    # ideas: List
+    error_message: Optional[str] = Field(description="Optional error message if there was an issue",
+                                         default=None)
+
 class RepurposeOutput(BaseModel):
     post: str = Field(description="The repurposed content post generated")
-    keywords: str = Field(description="Keywords for the repurposed content post")
+    # keywords: str = Field(description="Image caption to search on pixel/pexabay which can be used in the post")
     # original_post: str = Field(description)
     error_message: Optional[str] = Field(description="Optional error message if there was an issue", default=None)
 
@@ -107,9 +114,10 @@ class SocialMediaPostGenerator:
     def _get_repurpose_topics(self, n: int) -> List[str]:
         return [f"Repurpose Topic {i + 1}" for i in range(n)]
 
-    def _get_image_for_post(self, content: str) -> str:
-        return search_pixabay_images(content)
-
+    def _get_image_for_post(self, content: str):
+        if content:
+            return search_pixabay_images(content)
+        return []
 
     def _build_graph(self):
         builder = StateGraph(MessagesState)
@@ -153,6 +161,7 @@ class SocialMediaPostGenerator:
         # builder.add_edge('Analyse & Select Best Time to Post', END)
 
         return builder.compile()
+
     def _build_graph_image(self):
         try:
             # Make sure your graph is compiled
@@ -287,7 +296,7 @@ class SocialMediaPostGenerator:
         parser = JsonOutputParser(pydantic_object=HolidayBatch)
 
         system_content = (f"{general_system_prompt}"
-                        f"{keyword_generator_system})"
+                        # f"{holiday_keyword_generator_system})"
                         f"{tools_prompt}"
                         f'''Return your response as JSON according to these instructions:\n{parser.get_format_instructions().replace("{", "{{").replace("}", "}}")}''')
 
@@ -592,13 +601,6 @@ class SocialMediaPostGenerator:
         user_prompts = "\n".join(state["prompt_config"].get("BUSINESS_IDEAS_POST", []))
         results = []
 
-        # Define a specialized model for batch output
-        class BusinessBatchOutput(BaseModel):
-            posts: List[dict] = Field(description="List of objects with three string fields 'post', 'idea' and 'keywords'")
-            # ideas: List
-            error_message: Optional[str] = Field(description="Optional error message if there was an issue",
-                                                 default=None)
-
         batch_parser = JsonOutputParser(pydantic_object=BusinessBatchOutput)
 
         for i in range(0, count, 5):
@@ -610,7 +612,7 @@ class SocialMediaPostGenerator:
 
             system_content = (
                 f"{business_idea_system.format(num=batch_size, business_details=business_info)}\n\n"
-                f"{keyword_generator_system}"
+                # f"{keyword_generator_system}"
                 f"Return your response as JSON according to these instructions:\n{format_instructions_local}"
             )
 
@@ -707,7 +709,7 @@ class SocialMediaPostGenerator:
         parser = JsonOutputParser(pydantic_object=RepurposeBatch)
 
         system_content = (f"{general_system_prompt}"
-                        f"{keyword_generator_system}"
+                        # f"{keyword_generator_system}"
                         f"{repurposed_post_system}"
                         f"{tools_repurpose_prompt}"
                         f'''Return your response as JSON according to these instructions:\n{parser.get_format_instructions().replace("{", "{{").replace("}", "}}")}''')
@@ -769,8 +771,21 @@ class SocialMediaPostGenerator:
         all_posts = state["holiday_outputs"] + state["business_outputs"] + state["repurpose_outputs"] + state[
             'competitor_outputs'] + state['trending_outputs']
         # print("ALL POSTS : ", all_posts)
+        print(f"Finding Image Recommendations for {str(len(all_posts))} Generated Posts")
+        # enriched = [{"content": post,
+        #              'source': post['source'],
+        #              "image_url": self._get_image_for_post(keyword_generator(post['post'], "" if post['source'] != 'HOLIDAY' else '').get('keywords', ''))
+        #              } for post in all_posts]
+        enriched = []
+        for post in all_posts:
+            temp = {}
+            temp["content"] = post
+            temp["source"] = post['source']
+            temp["keywords"] = keyword_generator(post['post'], "" if post['source'] != 'HOLIDAY' else '').get('keywords', '')
+            temp['image_url'] = self._get_image_for_post(temp["keywords"])
 
-        enriched = [{"content": post, 'source': post['source'], "image_url": self._get_image_for_post(post['keywords'])} for post in all_posts]
+            enriched.append(temp)
+
         return {"combined_posts": enriched}
 
     def fetch_n_btp(self, state: MessagesState):

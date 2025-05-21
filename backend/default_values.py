@@ -24,10 +24,6 @@ from datetime import datetime, timedelta, timezone
 from typing import Dict, List
 from datetime import datetime, date
 
-
-PIXABAY_API_KEY = "50243041-2741613e433c3c2a3b1783510"
-PEXEL_API_KEY = "LuqMIWVW5Dnb9dvw9xtlgCbsIfX3XJrewpwOXrTi5smPPbxBsiXTRe4t"
-
 # businessId='1160473'
 
 holiday_system_prompt = '''
@@ -52,13 +48,26 @@ Use the Business details for context
 '''
 
 keyword_generator_system = '''
-After writing the post, generate relevant keywords for the post.
-The goal is to identify words or phrases which describe this post and would be highly suitable for searching images on a stock photo website. 
-Keep the keywords/phrases as a simple string separated by spaces.
-To complete this task, follow these guidelines:
-1. Max 5 keywords should be generated/selected.
-2. Prioritize concrete objects, scenes, or concepts that can be easily depicted in images.
-3. Select words that capture the main theme or subject of the text.
+After writing the post, a post caption related to a business idea or product and extracting important keywords. These keywords will be used to suggest relevant stock images for the post.
+Follow these guidelines to extract keywords from the caption:\n
+1. Keyword definition: Groups of words like \"Home Renovation\" or \"Group Classes\" are considered as a single keyword.
+2. Extract a maximum of 5 keywords.
+3. Every keyword must be an exact match from the main caption text. DO NOT MODIFY KEYWORDS. Preserve the sequence of the words for keywords.
+4. Include only keywords related to the business idea. Do not include generic objects like door, windows, cars, etc. in the output.
+5. Include hashtags only if they are clearly business idea related. Remove the \"#\" symbol and insert one space between words if the hashtag contains multiple words (e.g., \"#ModernLiving\" → \"Modern Living\").
+'''
+
+holiday_keyword_generator_system = '''
+After writing the post, extract the unique keywords or post caption related to one specific holiday. These keywords will be used to search for relevant stock images. Your job is to identify specific holiday-related words or phrases from the post.
+Follow these strict rules for keyword extraction:
+1. Keyword definition: Consider groups of words like \"Memorial Day\", \"Martin Luther King\" as a single keyword.
+2. Extract a maximum of 5 keywords.
+3. Every keyword must be an exact match from the main caption text. DO NOT MODIFY KEYWORDS. Preserve the sequence of the words for keywords.
+4. Exclude keywords that are not directly aligned with the holiday.
+5. Include hashtags only when they are strictly related to the holiday. Remove # from hashtags and add 1 space between words.
+6. Include keywords that clearly refer to the holiday or its official name (e.g., \"Memorial Day\", \"Valentine's Day\", \"New Year's Day\", \"Martin Luther King Jr. Day\").
+7. Do not include emotional, abstract, or generic words like \"love\", \"celebration\", \"holiday season\", \"heroes\" or \"family\".
+8. Extract keywords related to only the main holiday mentioned in the post. Ignore other holidays even if they are briefly mentioned. For example, if the post focuses on Good Friday with a brief mention of Easter, exclude keywords related to Easter.
 '''
 
 tools_prompt = '''
@@ -389,7 +398,7 @@ def search_pixabay_images(query, image_type='photo', per_page=5):
         url = f"https://api.pexels.com/v1/search?query={query}&per_page=5"
         payload = {}
         headers = {
-        'Authorization': PEXEL_API_KEY
+        'Authorization': os.getenv('PEXEL_API_KEY')
         }
 
         response = requests.request("GET", url, headers=headers, data=payload)
@@ -403,7 +412,7 @@ def search_pixabay_images(query, image_type='photo', per_page=5):
         try:
             base_url = 'https://pixabay.com/api/'
             params = {
-                'key': PIXABAY_API_KEY, # temp key
+                'key': os.getenv('PIXABAY_API_KEY'), # temp key
                 'q': query,
                 'image_type': image_type,
                 'per_page': per_page
@@ -681,3 +690,20 @@ def fetch_business_trends(
         return response.json()  # Returns full JSON content
     except requests.RequestException as e:
         return {"error": str(e)}
+
+
+def keyword_generator(post, tag):
+    url = "http://dev-gen-ai-1.birdeye.internal:8080/api/v1/social/generate-pexel-keywords/"
+
+    payload = json.dumps({
+        "text": post,
+        "tag": tag
+    })
+    headers = {
+        'accept': 'application/json',
+        'Content-Type': 'application/json'
+    }
+
+    response = requests.request("POST", url, headers=headers, data=payload)
+
+    return json.loads(response.text) if response else {}
