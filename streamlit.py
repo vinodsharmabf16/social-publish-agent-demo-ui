@@ -8,7 +8,7 @@ import openai
 
 # Set page configuration
 st.set_page_config(
-    page_title="Trending Generator",
+    page_title="Trending Topics Generator",
     page_icon="📱",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -85,7 +85,7 @@ def get_trending_topics(
     
     Ensure:
     - All source links are relevant to the specific topic
-    - The publication date of each source aligns closely with the {recency} window
+    - The publication date of each source should aligns very closely with the {recency} window
 
     Format the response as JSON with the following structure:
 
@@ -383,7 +383,7 @@ def display_analysis_results(analysis_results):
 
 # Streamlit app layout
 def main():
-    st.markdown("<h1 class='main-header'>Social Media Strategy Generator</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 class='main-header'>Trending Topics Generator</h1>", unsafe_allow_html=True)
     st.markdown("<p class='sub-header'>Generate trending topics and strategic recommendations for your business</p>",
                 unsafe_allow_html=True)
 
@@ -397,32 +397,20 @@ def main():
             os.environ["OPENAI_API_KEY"] = api_key
             st.success("API Key set!")
 
-        st.markdown("---")
-        st.write("Make sure your OpenAI API key has access to:")
-        st.write("- GPT-4.1-mini (for trending topics)")
-        st.write("- GPT-4o (for analysis)")
-        st.write("- Web search capability")
-
-        st.markdown("---")
-        model_selection = st.selectbox("Analysis Model",
-                                       ["gpt-4o", "gpt-4", "gpt-3.5-turbo"],
-                                       index=0,
-                                       help="Select the model to use for analyzing the trending topics")
-
     # User input section
     st.subheader("Business Information", divider="blue")
 
     col1, col2 = st.columns(2)
     with col1:
-        business_name = st.text_input("Business Name", "Reliance Industries")
+        business_name = st.text_input("Business Name", "Wild Bill's Tobacco")
         industry = st.text_input("Industry", "Retail")
-        sub_industry = st.text_input("Sub-Industry", "Retail")
+        sub_industry = st.text_input("Sub-Industry", "Tobacco Shops")
 
     with col2:
-        country = st.text_input("Country Code", "IN",
+        country = st.text_input("Country Code", "US",
                                 help="Two-letter country code (e.g., IN for India, US for United States)")
-        city = st.text_input("City", "Hyderabad")
-        region = st.text_input("Region/State", "Hyderabad")
+        city = st.text_input("City", "Springfeild")
+        region = st.text_input("Region/State", "Ohio")
 
     # Add recency selection dropdown
     recency = st.selectbox(
@@ -473,11 +461,11 @@ def main():
         display_trending_data(trending_data)
         st.markdown("</div>", unsafe_allow_html=True)
 
-        # Second step - Analyze and prioritize topics
+        # Second step - Analyze and prioritize topics (using default model)
         status_text.text("Step 2/2: Analyzing and prioritizing topics...")
         analysis_results = analyze_and_prioritize_topics(
             business_data=trending_data,
-            model=model_selection
+            model="gpt-4o"  # Using default model since selection was removed
         )
         progress_bar.progress(100)
         status_text.text("Process completed successfully!")
