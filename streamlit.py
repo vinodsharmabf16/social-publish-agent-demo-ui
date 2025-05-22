@@ -264,17 +264,17 @@ def display_trending_data(trending_data):
             st.text(trending_data["raw_response"])
         return
 
-    st.subheader("Business Information", divider="blue")
-    col1, col2 = st.columns(2)
-    with col1:
-        st.write(f"**Business Name:** {trending_data.get('business_name', 'N/A')}")
-        st.write(f"**Industry:** {trending_data.get('industry', 'N/A')}")
-        st.write(f"**Sub-Industry:** {trending_data.get('sub_industry', 'N/A')}")
-    with col2:
-        st.write(f"**Location:** {trending_data.get('location', 'N/A')}")
-        st.write(f"**Description:** {trending_data.get('business_information', 'N/A')}")
+    # st.subheader("Business Information", divider="blue")
+    # col1, col2 = st.columns(2)
+    # with col1:
+    #     st.write(f"**Business Name:** {trending_data.get('business_name', 'N/A')}")
+    #     st.write(f"**Industry:** {trending_data.get('industry', 'N/A')}")
+    #     st.write(f"**Sub-Industry:** {trending_data.get('sub_industry', 'N/A')}")
+    # with col2:
+    #     st.write(f"**Location:** {trending_data.get('location', 'N/A')}")
+    #     st.write(f"**Description:** {trending_data.get('business_information', 'N/A')}")
 
-    st.subheader("Trending Topics", divider="blue")
+    st.subheader("Candiate Topics", divider="blue")
 
     # Check if trending_topics exists and is not empty
     trending_topics = trending_data.get("trending_topics", [])
@@ -327,14 +327,16 @@ def display_analysis_results(analysis_results):
 
     # Business information
     business_info = analysis_results.get("business_information", {})
-    st.subheader("Business Analysis", divider="blue")
+    st.subheader("Business Information", divider="blue")
     st.write(f"**Business:** {business_info.get('business_name', 'N/A')}")
-    st.write(f"**Industry:** {business_info.get('industry', 'N/A')} / {business_info.get('sub_industry', 'N/A')}")
+    # st.write(f"**Industry:** {business_info.get('industry', 'N/A')} / {business_info.get('sub_industry', 'N/A')}")
+    st.write(f"**Industry:** {business_info.get('industry', 'N/A')}")
+    st.write(f"**Sub-Industry:** {business_info.get('sub_industry', 'N/A')}")
     st.write(f"**Location:** {business_info.get('location', 'N/A')}")
     st.write(f"**Description:** {business_info.get('description', 'N/A')}")
 
     # Selected topics
-    st.subheader("Recommended Topics", divider="blue")
+    st.subheader("Trending Topics", divider="blue")
     selected_topics = analysis_results.get("selected_topics", [])
 
     if not selected_topics:
@@ -421,7 +423,7 @@ def main():
     )
 
     # Submit button
-    generate_button = st.button("Generate Strategy", type="primary", use_container_width=True)
+    generate_button = st.button("Generate", type="primary", use_container_width=True)
 
     if generate_button:
         # Check if API key is provided
@@ -434,7 +436,7 @@ def main():
         status_text = st.empty()
 
         # First step - Get trending topics
-        status_text.text("Step 1/2: Fetching trending topics...")
+        status_text.text("Step 1/2: Fetching candidate topics...")
         trending_data = get_trending_topics(
             business_name=business_name,
             industry=industry,
@@ -456,13 +458,13 @@ def main():
             return
 
         # Display trending topics
-        st.markdown("<div class='result-section'>", unsafe_allow_html=True)
-        st.markdown("## 📈 Trending Topics")
+        # st.markdown("<div class='result-section'>", unsafe_allow_html=True)
+        # st.markdown("## 📈 Trending Topics")
         display_trending_data(trending_data)
         st.markdown("</div>", unsafe_allow_html=True)
 
         # Second step - Analyze and prioritize topics (using default model)
-        status_text.text("Step 2/2: Analyzing and prioritizing topics...")
+        status_text.text("Step 2/2: Filtering and Ranking topics...")
         analysis_results = analyze_and_prioritize_topics(
             business_data=trending_data,
             model="gpt-4o"  # Using default model since selection was removed
@@ -472,7 +474,7 @@ def main():
 
         # Display analysis results
         st.markdown("<div class='result-section'>", unsafe_allow_html=True)
-        st.markdown("## 🔍 Analysis Results")
+        # st.markdown("## 🔍 Analysis Results")
         display_analysis_results(analysis_results)
         st.markdown("</div>", unsafe_allow_html=True)
 
