@@ -743,6 +743,7 @@ class SocialMediaPostGenerator:
 
         user_prompts = "\n".join(state["prompt_config"].get("BUSINESS_IDEAS_POST", []))
         results = []
+        business_name = state['business_name']
 
         batch_parser = JsonOutputParser(pydantic_object=BusinessBatchOutput)
 
@@ -754,7 +755,7 @@ class SocialMediaPostGenerator:
             format_instructions_local = batch_parser.get_format_instructions()
 
             system_content = (
-                f"{business_idea_system.format(num=batch_size, business_details=business_info)}\n\n"
+                f"{business_idea_system.format(num=batch_size, business_details=business_info,business_name=business_name)}\n\n"
                 # f"{keyword_generator_system}"
                 f"Return your response as JSON according to these instructions:\n{format_instructions_local}"
             )

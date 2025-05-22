@@ -36,7 +36,7 @@ You're a Social Media Writer. Below are some things to keep in mind.
 Post should be in English language only. Balance information about the business and the event. 
 Avoid any time-specific language or references to specific dates.
 Avoid vague references like Your local shop at some location. 
-Use <|BUSINESS_NAME|> tag whenever referencing the business or its location. Do not change it, use as it is.
+Use business name wherever referencing the business or its location.
 Be creative.
 '''
 
@@ -94,7 +94,7 @@ Follow these guidelines:
 2. Write the post content in English only, using only English words
 3. Keep the tone friendly and inviting
 4. Do not generate about dates/number of years
-5. Use <|BUSINESS_NAME|> tag in same format given. Do not change it, use as it is.
+5. Use  the business name - ``{business_name}`` wherever needed in the post.
 '''
 
 repurposed_post_system = '''
@@ -660,6 +660,10 @@ TOOLS_REGISTRY = {
     "Get Top performing posts - instagram":{
         "function":tool_fetch_business_competitors_instagram,
         "description":"Fetches top performing posts for a given business name and channel 'Instagram'."
+    },
+    "Get Top performing posts - twitter":{
+        "function":tool_fetch_business_competitors_twitter,
+        "description":"Fetches top performing posts for a given business name and channel 'Twitter'."
     }
 }
 
