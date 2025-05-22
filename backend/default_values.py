@@ -110,6 +110,7 @@ Rephrasing Instructions:
 4. Include the business name token wherever relevant. 
 5. Do not include the parts with offers(e.g., 30% off, starting at just $$), season-specific content, time-specific content or reference any individual. Focus only on the parts which does not fall into these categories. Like, information about services or products, or some engaging content, etc.
 6. Cross-verify that the rephrased post information matches the information given in the original post. If the information does not match, rephrase the post with the correct information. 
+7. Use the business name {business_name} wherever needed in the post.
 '''
 
 classification_prompt = '''
@@ -698,7 +699,7 @@ def tool_fetch_business_trends(
 
 
 def keyword_generator(post, tag):
-    url = "http://preprod-genai.birdeye.internal:8080/api/v1/social/generate-pexel-keywords/"
+    url = "http://dev-gen-ai-1.birdeye.internal:8080/api/v1/social/generate-pexel-keywords/"
 
     payload = json.dumps({
         "text": post,
