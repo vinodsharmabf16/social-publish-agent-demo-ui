@@ -62,7 +62,7 @@ def rebuild_table():
             post_text = content.get("post", "")
             source = post.get("source", "")
             keywords = post.get("keywords", [])
-            keywords = f""" {keywords}  \n\n {keywords}  """
+            keywords = f""" - {keywords} """
             suggested_time = f"2025-05-14 {10 + i % 12}:00 {('AM' if i % 24 < 12 else 'PM')}"
             image_urls = post.get("image_url", ["https://salonlfc.com/wp-content/uploads/2018/01/image-not-found-scaled-1150x647.png"])
             
@@ -89,7 +89,7 @@ def rebuild_table():
                 <div class='output-table-row'>
                     <div class='col-sno'>{i}</div>
                     <div class='col-time'>{suggested_time}</div>
-                    <div class='col-type' title="Source: {keywords}"><span class="tooltip-text">{source}</span></div>
+                    <div class='col-type' title="{keywords}"><span class="tooltip-text">{source}</span></div>
                     <div class='col-content'>
                         <div class='content-scrollable'>{post_text}</div>
                     </div>

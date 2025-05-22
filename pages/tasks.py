@@ -9,13 +9,162 @@ from logger import get_logger
 logger = get_logger(__name__)
 
 # Global variable to store account ID
-ACCOUNT_ID = "default"  # Default account ID
+ACCOUNT_ID = "Village_Pet_Care"  # Default account ID
 
 # Global UI component references
 tools_modal = None
 business_posts_detail_view = None
 competitor_posts_detail_view = None
 trending_topics_detail_view = None
+
+# Add this right after other similar utility functions like toggle_task, add_prompt, etc.
+def create_arrow_toggle(initial_state=False):
+    state = {"is_visible": initial_state}
+    
+    def toggle_fn():
+        # Toggle the state
+        state["is_visible"] = not state["is_visible"]
+        
+        # Return appropriate updates based on new state
+        if state["is_visible"]:
+            return gr.update(visible=True), gr.update(value="▼")
+        else:
+            return gr.update(visible=False), gr.update(value="▶")
+    
+    return toggle_fn
+    
+# Add this function to load tool configurations
+def load_tool_configs():
+    """
+    Load tool configurations from the current account's draft file
+    Returns a dictionary of tool configurations
+    """
+    global ACCOUNT_ID
+    logger.info(f"Loading tool configurations for account: {ACCOUNT_ID}")
+    
+    draft_file = f"drafts/{ACCOUNT_ID}.json"
+    
+    try:
+        if not os.path.exists(draft_file):
+            logger.warning(f"No draft file found for account: {ACCOUNT_ID}")
+            return {}
+        
+        with open(draft_file, 'r') as f:
+            draft_data = json.load(f)
+        
+        if str(ACCOUNT_ID) not in draft_data:
+            logger.warning(f"No data found for account ID: {ACCOUNT_ID} in draft file")
+            return {}
+            
+        return draft_data[str(ACCOUNT_ID)].get("tools", {})
+    except Exception as e:
+        logger.error(f"Error loading tool configurations: {str(e)}")
+        return {}
+
+# Add these functions to update UI components with saved configurations
+def update_business_posts_ui():
+    """Load and display business posts tool configuration"""
+    logger.info("Loading business posts configuration")
+    
+    tools_dict = load_tool_configs()
+    business_posts_configs = tools_dict.get("REPURPOSED_POST", [])
+    
+    # Default values
+    fb_checked = True
+    tw_checked = True
+    ig_checked = True
+    duration = "30"
+    num_posts = "10"
+    metric = "Engagement"
+    
+    # Check if we have configs
+    if business_posts_configs:
+        # Find which platforms are enabled by checking if they exist in configs
+        fb_checked = any("facebook" in config.get("name", "").lower() for config in business_posts_configs)
+        tw_checked = any("twitter" in config.get("name", "").lower() for config in business_posts_configs)
+        ig_checked = any("instagram" in config.get("name", "").lower() for config in business_posts_configs)
+        
+        # Get the first config to extract common settings
+        if business_posts_configs:
+            first_config = business_posts_configs[0].get("config", {})
+            duration = str(first_config.get("duration", "30"))
+            num_posts = str(first_config.get("num_posts", "10"))
+            metric = first_config.get("evaluation_metric", "Engagement")
+    
+    logger.info(f"Business posts config loaded: FB={fb_checked}, TW={tw_checked}, IG={ig_checked}, duration={duration}, posts={num_posts}, metric={metric}")
+    
+    return [
+        gr.update(value=fb_checked),
+        gr.update(value=tw_checked),
+        gr.update(value=ig_checked),
+        gr.update(value=duration),
+        gr.update(value=num_posts),
+        gr.update(value=metric)
+    ]
+
+def update_competitor_posts_ui():
+    """Load and display competitor posts tool configuration"""
+    logger.info("Loading competitor posts configuration")
+    
+    tools_dict = load_tool_configs()
+    competitor_posts_configs = tools_dict.get("COMP", [])
+    
+    # Default values
+    fb_checked = True
+    tw_checked = True
+    ig_checked = True
+    duration = "30"
+    num_posts = "10"
+    metric = "Engagement"
+    
+    # Check if we have configs
+    if competitor_posts_configs:
+        # Find which platforms are enabled by checking if they exist in configs
+        fb_checked = any("facebook" in config.get("name", "").lower() for config in competitor_posts_configs)
+        tw_checked = any("twitter" in config.get("name", "").lower() for config in competitor_posts_configs)
+        ig_checked = any("instagram" in config.get("name", "").lower() for config in competitor_posts_configs)
+        
+        # Get the first config to extract common settings
+        if competitor_posts_configs:
+            first_config = competitor_posts_configs[0].get("config", {})
+            duration = str(first_config.get("duration", "30"))
+            num_posts = str(first_config.get("num_posts", "10"))
+            metric = first_config.get("evaluation_metric", "Engagement")
+    
+    logger.info(f"Competitor posts config loaded: FB={fb_checked}, TW={tw_checked}, IG={ig_checked}, duration={duration}, posts={num_posts}, metric={metric}")
+    
+    return [
+        gr.update(value=fb_checked),
+        gr.update(value=tw_checked),
+        gr.update(value=ig_checked),
+        gr.update(value=duration),
+        gr.update(value=num_posts),
+        gr.update(value=metric)
+    ]
+
+def update_trending_topics_ui():
+    """Load and display trending topics tool configuration"""
+    logger.info("Loading trending topics configuration")
+    
+    tools_dict = load_tool_configs()
+    trending_configs = tools_dict.get("TRENDING", [])
+    
+    # Default values
+    num_posts = "10"
+    duration = "1"
+    
+    # Check if we have configs
+    if trending_configs and trending_configs[0].get("config"):
+        config = trending_configs[0].get("config", {})
+        num_posts = str(config.get("num_posts", "10"))
+        duration = str(config.get("duration", "1"))
+    
+    logger.info(f"Trending topics config loaded: posts={num_posts}, duration={duration}")
+    
+    return [
+        gr.update(value=num_posts),
+        gr.update(value=duration)
+    ]
 
 def save_business_posts_config(get_facebook, get_twitter, get_instagram, duration, num_posts, metric):
     """
@@ -528,15 +677,12 @@ def update_account_id_and_load_draft(new_account_id):
         draft_result = load_draft_for_account(ACCOUNT_ID)
         
         if draft_result:
-            draft_values, tools_dict = draft_result
+            draft_values, _ = draft_result
             
             # Create an update object for each toggle and prompt
             updates = []
             for i, val in enumerate(draft_values):
-                print("val ------     /////// /-------", val)
                 updates.append(gr.update(value=val))
-            
-            print("updates ------ ------ ----- ", updates)
             
             # Return success message and form values
             return (
@@ -558,7 +704,7 @@ def update_account_id_and_load_draft(new_account_id):
             gr.update(visible=True),
             *[gr.update() for _ in range(10)]  # 5 toggles + 5 prompts
         )
-     
+      
 def update_account_id(new_account_id):
     """Update the global account ID"""
     global ACCOUNT_ID
@@ -703,7 +849,7 @@ def tag_clicked(tag_label):
 # === Show/hide the prompt block ===
 def toggle_task(enabled):
     logger.info(f"Toggling task block to: {enabled}")
-    return gr.update(visible=enabled)
+    return gr.update(visible=False)
 
 # Functions for opening specific tool detail views
 def open_business_posts_detail():
@@ -1221,6 +1367,45 @@ def render(on_publish=None):
         padding-right: 20px !important;
         cursor: pointer !important;
     }
+    /* Add these styles to your existing CSS block */
+.task-arrow-btn {
+    min-width: 30px !important;
+    width: 30px !important;
+    height: 30px !important;
+    border-radius: 50% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 14px !important;
+    background: transparent !important;
+    border: none !important;
+    color: #1a73e8 !important;
+    box-shadow: none !important;
+}
+
+.task-arrow-btn:hover {
+    background: #f0f7ff !important;
+}
+
+/* Fix alignment in the row */
+.task-card .row {
+    align-items: center !important;
+}
+
+/* Remove extra padding in the arrow column */
+.arrow-column {
+    padding: 0 !important;
+    margin-right: 5px !important;
+}
+    
+    /* Make the task heading clickable */
+    .task-heading {
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+    }
     </style>
     """)
 
@@ -1380,7 +1565,7 @@ def render(on_publish=None):
                     )
                     
                     trending_duration = gr.Radio(
-                        choices=["1", "7", "30"], 
+                        choices=[("Last 24 hours", "1"), ("Last Week", "7"), ("Last Month", "30")], 
                         value="1", 
                         label="Time period (days)"
                     )
@@ -1509,16 +1694,24 @@ def render(on_publish=None):
             ("Create post based on the trends.","Identify the top trends and use them to generate new posts.", "Trending")
         ]
 
+        content_blocks = []
+        arrow_buttons = []
         for i, (heading, title, tag) in enumerate(task_data, start=1):
             with gr.Column(elem_classes=["task-card"]):
                 with gr.Row():
-                    with gr.Column(scale=11):
+                    with gr.Column(scale=1, min_width=40):
+                        # Add a clickable arrow button
+                        arrow_btn = gr.Button("▶", elem_id=f"task-arrow-{i}", elem_classes=["task-arrow"],
+                                              size="sm", variant="text")
+                        arrow_buttons.append(arrow_btn)
+                    with gr.Column(scale=10):
                         gr.Markdown(f"**{i}. {heading}**")
                     with gr.Column(scale=1, min_width=80):
-                        toggle = Toggle(value=True, color="blue", label="")
+                        toggle = Toggle(value=True, color="blue", label="", elem_id=f"task-toggle-{i}")
                         all_toggles.append(toggle)
 
-                with gr.Column(visible=True) as content_block:
+                # Content block - controlled by both toggle and arrow
+                with gr.Column(visible=False, elem_id=f"task-content-{i}") as content_block:
                     with gr.Row():
                         # Custom HTML for the main prompt with tools button
                         with gr.Column(scale=8):
@@ -1536,21 +1729,25 @@ def render(on_publish=None):
                                 if tag == "My posts":
                                     tools_btn = gr.Button("🔧 Tools", elem_classes=["tools-btn"])
                                     tools_btn.click(
-                                        fn=open_business_posts_detail,
-                                        outputs=[business_posts_detail_view]
+                                        fn=lambda: (open_business_posts_detail(), *update_business_posts_ui()),
+                                        outputs=[business_posts_detail_view, 
+                                                get_facebook_business_posts, get_twitter_business_posts, get_instagram_business_posts,
+                                                business_posts_duration, business_posts_count, business_posts_metric]
                                     )
                                 elif tag == "Competitor posts":
                                     tools_btn = gr.Button("🔧 Tools", elem_classes=["tools-btn"])
                                     tools_btn.click(
-                                        fn=open_competitor_posts_detail,
-                                        outputs=[competitor_posts_detail_view]
-                                    )
+    fn=lambda: (open_competitor_posts_detail(), *update_competitor_posts_ui()),
+    outputs=[competitor_posts_detail_view, 
+             get_facebook_competitor_posts, get_twitter_competitor_posts, get_instagram_competitor_posts,
+             competitor_posts_duration, competitor_posts_count, competitor_posts_metric]
+)
                                 elif tag == "Trending":
                                     tools_btn = gr.Button("🔧 Tools", elem_classes=["tools-btn"])
                                     tools_btn.click(
-                                        fn=open_trending_topics_detail,
-                                        outputs=[trending_topics_detail_view]
-                                    )
+    fn=lambda: (open_trending_topics_detail(), *update_trending_topics_ui()),
+    outputs=[trending_topics_detail_view, trending_posts_count, trending_duration]
+)
                                 
                                 all_main_prompts.append(main_prompt)
 
@@ -1580,12 +1777,25 @@ def render(on_publish=None):
                         outputs=[prompt_count] + extra_prompts_containers
                     )
 
+                # Store content block for arrow button access
+                content_blocks.append(content_block)
+
+                # Connect toggle to content block
                 toggle.change(
                     fn=toggle_task,
                     inputs=[toggle],
                     outputs=[content_block]
                 )
-    
+        for i, arrow_btn in enumerate(arrow_buttons):
+            # Create a unique toggle function for each arrow button that maintains its own state
+            toggle_fn = create_arrow_toggle(initial_state=False)
+            
+            # Connect the button to its toggle function
+            arrow_btn.click(
+                fn=toggle_fn,
+                outputs=[content_blocks[i], arrow_btn]
+            )
+
     # Save settings
     save_settings_btn.click(
         fn=update_account_id_and_load_draft,
@@ -1739,6 +1949,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }, 1000);
 });
+    
     </script>
     """)
     
