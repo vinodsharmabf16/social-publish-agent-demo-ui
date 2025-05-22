@@ -4,6 +4,9 @@ from typing import Optional
 from enum import Enum
 import json
 
+from dotenv import load_dotenv
+load_dotenv(override=True)
+
 # Import your logic functions
 from search_trending_topics import generate_social_media_strategy  # Replace 'your_module' with actual filename if needed
 

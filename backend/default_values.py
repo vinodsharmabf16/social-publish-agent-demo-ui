@@ -698,7 +698,7 @@ def tool_fetch_business_trends(
 
 
 def keyword_generator(post, tag):
-    url = "http://dev-gen-ai-1.birdeye.internal:8080/api/v1/social/generate-pexel-keywords/"
+    url = "http://preprod-genai.birdeye.internal:8080/api/v1/social/generate-pexel-keywords/"
 
     payload = json.dumps({
         "text": post,
