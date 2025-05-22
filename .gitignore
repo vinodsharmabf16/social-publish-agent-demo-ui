@@ -4,7 +4,7 @@ social-env
 backend/__pycache__
 backend/requirements.txt
 test.ipynb
-__pycache__
+__pycache__/
 pages/__pycache__
 drafts
 logs

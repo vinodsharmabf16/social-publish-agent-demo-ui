@@ -793,7 +793,7 @@ def render(on_publish=None):
             border-radius: 6px !important;
             padding: 10px !important;
             padding-right: 105px !important;
-            font-size: 14px !important;
+            font-size: 18px !important;
             min-height: 80px !important;
             max-width: calc(100% - 105px) !important; /* Try max-width instead of width */
             box-sizing: border-box !important;
@@ -1502,11 +1502,11 @@ def render(on_publish=None):
     # === Main task section
     with gr.Column(elem_classes=["task-wrapper"]):
         task_data = [
-            ("Analyze content based on Business specific post ideas", "Generate post based on the business context.", "Post ideas"),
-            ("Analyze content for Upcoming holidays","Generate post for upcoming holidays.", "Holiday ideas"),
-            ("Suggest content based on top performing post","Generate new posts based on your top performing posts.", "My posts"),
-            ("Content based on your competitors' posts","Generate new posts based on your competitors' top performing posts.", "Competitor posts"),
-            ("Analyze content based on the trends","Create posts based on the latest trends", "Trending")
+            ("Create post based on my business context.", "Analyze the business context and generate a relevant post.", "Post ideas"),
+            ("Create post based on the upcoming holiday(s).","Analyse the upcoming holidays along with business context to generate posts.", "Holiday ideas"),
+            ("Create a post based on my previous top-performing content.","Analyze top-performing posts and repurpose them into fresh, new content.", "My posts"),
+            ("Create a post inspired by my competitor’s top-performing content.' posts","Analyse my competitor's top performing post and reuse them to generate new posts.", "Competitor posts"),
+            ("Create post based on the trends.","Identify the top trends and use them to generate new posts.", "Trending")
         ]
 
         for i, (heading, title, tag) in enumerate(task_data, start=1):
